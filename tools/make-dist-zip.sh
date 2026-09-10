@@ -254,8 +254,15 @@ if git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
    [ -n "$(git -C "$REPO_DIR" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
   DIRTY=true
 fi
-printf '{"commit": "%s", "dirty": %s, "stale": %s, "engine_wasm_sha256": "%s"}\n' \
-  "$COMMIT" "$DIRTY" "$STALE" "$ENGINE_SHA" > "$OUT_ZIP.json"
+# version：vite 构建写在 dist/ 根的 skymap-base.json（与页面上的 window.SkymapBase
+# 同源）。没有这个文件（老 dist / 测试夹具）写 "unknown"，不因此失败。
+VERSION=unknown
+if [ -f "$STAGE_DIR/skymap-base.json" ]; then
+  VERSION=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' \
+            "$STAGE_DIR/skymap-base.json" 2>/dev/null || echo unknown)
+fi
+printf '{"commit": "%s", "dirty": %s, "stale": %s, "engine_wasm_sha256": "%s", "version": "%s"}\n' \
+  "$COMMIT" "$DIRTY" "$STALE" "$ENGINE_SHA" "$VERSION" > "$OUT_ZIP.json"
 
 echo "==> 完成：$OUT_ZIP"
 echo "    大小：$SIZE 字节"

@@ -60,7 +60,7 @@ def test_json_sidecar_fields(tmp_path):
     run(dist)
     with open(str(tmp_path / "dist.zip.json")) as f:
         meta = json.load(f)
-    assert set(meta) == {"commit", "dirty", "stale", "engine_wasm_sha256"}
+    assert set(meta) == {"commit", "dirty", "stale", "engine_wasm_sha256", "version"}
     assert meta["engine_wasm_sha256"] == hashlib.sha256(WASM_BYTES).hexdigest()
     assert isinstance(meta["dirty"], bool)
     assert meta["commit"] == "unknown" or len(meta["commit"]) == 40
@@ -90,3 +90,21 @@ def test_reproducible_across_two_runs(tmp_path):
     run(dist)
     second = sha256_of(str(tmp_path / "dist.zip"))
     assert first == second
+
+
+def test_json_sidecar_version_from_skymap_base_json(tmp_path):
+    dist = make_fake_dist(str(tmp_path))
+    with open(os.path.join(dist, "skymap-base.json"), "w") as f:
+        json.dump({"version": "v9.9.9", "protocol": 1}, f)
+    run(dist)
+    with open(str(tmp_path / "dist.zip.json")) as f:
+        meta = json.load(f)
+    assert meta["version"] == "v9.9.9"
+
+
+def test_json_sidecar_version_unknown_without_skymap_base_json(tmp_path):
+    dist = make_fake_dist(str(tmp_path))
+    run(dist)
+    with open(str(tmp_path / "dist.zip.json")) as f:
+        meta = json.load(f)
+    assert meta["version"] == "unknown"

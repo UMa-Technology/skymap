@@ -18,7 +18,8 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.browser,
-        ...globals.node
+        ...globals.node,
+        __SKYMAP_VERSION__: 'readonly'
       }
     },
     rules: {

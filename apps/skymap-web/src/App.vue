@@ -140,7 +140,7 @@ export default {
     // (downloading + instantiating the wasm) so it keeps its splash up instead
     // of revealing a black WebView. window.StellariumInitPhase is already
     // 'booting' (set at sw_helpers load) for hosts that poll instead.
-    jsbridge.postMessage('initProgress', { phase: 'booting' })
+    jsbridge.postMessage('initProgress', { phase: 'booting', base: window.SkymapBase })
 
     import('@/assets/js/stellarium-web-engine.wasm?url').then(f => {
       // Initialize the StelWebEngine viewer singleton
@@ -153,7 +153,7 @@ export default {
           // phase 'engineReady'; mirror it to the native host so it knows it
           // may now push observer location / time / language. Still keep the
           // splash up until 'firstFrame' below. (§2.9 readiness contract.)
-          jsbridge.postMessage('initProgress', { phase: 'engineReady' })
+          jsbridge.postMessage('initProgress', { phase: 'engineReady', base: window.SkymapBase })
 
           // No browser/GeoIP auto-detection: the location is supplied by the
           // host (Flutter) app via `$stel.core.observer.latitude/longitude/
@@ -336,7 +336,7 @@ export default {
             if (firstFrameSent) return
             firstFrameSent = true
             swh.notifyInitPhase('firstFrame')
-            jsbridge.postMessage('initProgress', { phase: 'firstFrame' })
+            jsbridge.postMessage('initProgress', { phase: 'firstFrame', base: window.SkymapBase })
             jsbridge.postMessage('ready', {
               phase: 'firstFrame',
               fov: that.$stel.core.fov * 180 / Math.PI,
@@ -357,7 +357,7 @@ export default {
         // Terminal failure: tell the host so it stops waiting for 'ready' and
         // can show its own fallback instead of a spinner forever. (§2.9)
         window.StellariumInitPhase = 'error'
-        jsbridge.postMessage('initProgress', { phase: 'error', reason: 'wasm-unsupported' })
+        jsbridge.postMessage('initProgress', { phase: 'error', reason: 'wasm-unsupported', base: window.SkymapBase })
       }
     })
   }

@@ -14,6 +14,7 @@ import { installCustomHorizon } from './custom-horizon.js'
 import { installSatellites } from './satellites.js'
 import { installSkyPhotos } from './sky-photos.js'
 import { installSkyAr } from './sky-ar.js'
+import { skymapBase } from '@/protocol'
 
 var DDDate = Date
 DDDate.prototype.getJD = function () {
@@ -65,6 +66,11 @@ if (typeof window !== 'undefined') {
   window.__stelReady = _stelReadyPromise
   window.StellariumReady = false
   window.StellariumInitPhase = 'booting'
+  // Identity of this web layer for hosts (protocol handshake): the git tag it
+  // was built from and its wire-protocol number. Set at module load so even
+  // the first 'initProgress' message can carry it. Frozen.
+  window.SkymapBase = skymapBase(
+    typeof __SKYMAP_VERSION__ !== 'undefined' ? __SKYMAP_VERSION__ : undefined)
 }
 
 const swh = {
