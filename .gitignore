@@ -31,10 +31,9 @@ apps/skydata/surveys/dss-clean/
 # JetBrains IDE project config — untracked (was committed; now a per-dev choice)
 .idea/
 node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
-# 给 App 侧的一次性 dist 导出包（正式产物在 unigo/assets/dist.zip）
+# One-off dist exports for host apps (the shipped artifact is the Release dist.zip)
 apps/skymap-web/dist-*.zip
-# tools/make-dist-zip.sh 在 dist.zip 旁写的来源 sidecar（.sha256 / .json），
-# 本身也是构建产物，不进库；nested .gitignore 只忽略了 dist.zip 本身
+# Sidecars written next to dist.zip by tools/make-dist-zip.sh (.sha256 / .json) are build outputs; the nested .gitignore covers only dist.zip itself
 apps/skymap-web/dist.zip*
 # Raw Alibaba font source archives (huge — incl. a 278MB PuHuiTi zip). The
 # extracted source TTFs under tools/.fontcache/ are what we track instead.
@@ -46,7 +45,7 @@ tools/halpha-build/
 /dev_docs
 /docs
 /.superpowers
-# DSS castclean 的本地输出（tools/plate_eq/assemble.py 读），不进库
+# Local castclean output read by tools/plate_eq/assemble.py; not tracked
 /dss-cast-cleaned/
 !tools/.fontcache/LICENSES.md
 !tools/.fontcache/OFL.txt
