@@ -71,3 +71,64 @@ star 恒星 dso 深空天体 minor_planet 小行星 tle_satellite 卫星（TLE�
 ### 1. 简介
 JSBridge 是一个用于在 JavaScript 和原生应用（如 iOS 和 Android）之间进行通信的桥接工具。它允许 JavaScript 代码调用原生功能，同时也允许原生代码调用 JavaScript 函数。
 
+## 宿主契约（嵌入方必读）
+
+以下内容均取自源码，行号供核对（相对本仓库当前提交）。
+
+#### 1. 就绪三阶段与两条通道
+
+`booting`（wasm 下载/实例化）→ `engineReady`（`window.$stel` 可用，此时才可安全下发
+经纬度/时间/语言）→ `firstFrame`（首帧已绘制，可揭开 WebView/关闭原生 splash），失败为
+`error`。window 全局量（`src/assets/sw_helpers.js:61-74,81-91`）：
+`window.StellariumInitPhase`（四态字符串）、`window.StellariumReady`（布尔，到
+`firstFrame` 置 `true`）、`window.__stelReady`（`Promise`，模块加载时即创建，首帧时以
+引擎实例 resolve，供注入式宿主无竞态拿到就绪信号）。postMessage
+（`src/App.vue:143,156,339-345,360`）：四个时间点各发一次 `initProgress {phase, base,
+reason?}`（`reason` 仅 `error` 时出现，当前唯一值 `wasm-unsupported`），首帧时额外发一次
+`ready {fov, location, mjd}`（角度制 FOV、`currentLocation`、儒略日）。
+
+#### 2. 握手
+
+`window.SkymapBase = {version, protocol}`（`src/protocol.js:16-21` 的 `skymapBase()`，
+模块加载时挂上，同一对象也是每条 `initProgress` 的 `base` 字段）；`version` 是构建时
+打入的 git tag（本地构建 `'0.0.0-local'`），`protocol` 是 wire-protocol 版本号（当前
+`PROTOCOL = 1`，`src/protocol.js:11`）。宿主应精确比对 `protocol`、对 `version` 要求
+最低值；升级规则见根 README「Releases and the handshake」。
+
+#### 3. 出站消息通道（页面 → 原生）
+
+`src/utils/jsbridge.js:9-16`：iOS 走
+`window.webkit.messageHandlers.stellarium.postMessage(message)`，其它平台走
+`window.stellarium.postMessage(message)`；消息体为
+`JSON.stringify({action, data})`（`jsbridge.js:10`）。
+
+#### 4. 入站（原生 → 页面）
+
+本文件上方列出的动作注册为 `window.StellariumActions.<action>(data)`
+（`jsbridge.js:19-21`）。引擎就绪后 `sw_helpers.js:136-139` 依次挂上四个全局对象：
+
+- `window.CustomHorizon = { set, show, clear }` — 自定义地平线廓线
+  （`src/assets/custom-horizon.js:63,69,75,98`）
+- `window.SkyPhotos = { add, setOpacity, setVisible, remove, clear }` — 叠加照片
+  （`src/assets/sky-photos.js:81,137,145,152,166,175`）
+- `window.SkyAR = { enable, setSkyOpacity }` — AR 开关与星图整体透明度
+  （`src/assets/sky-ar.js:35,44,70`）
+- `window.Satellites = { setTLE, clear }` — 运行期推送最新 TLE
+  （`src/assets/satellites.js:101,113,135`）
+
+#### 5. URL 播种参数
+
+`src/App.vue:setStateFromQueryArgs`（`46-94`）解析的 query：`date`（`54-55`）、
+`lat`/`lng`/`elev`（`60-61`）、`az`（`67`）、`alt`（`68`）、`fov`（`69`，均角度制）、
+`lang`（`76-78`）、`sc`（`263-267`，skyculture key），以及路由路径 `/skysource/<name>`
+（`83-93`）。初值必须走 URL：页面加载到 `engineReady` 之前宿主发出的
+`postMessage`/`StellariumActions` 事件没有队列缓冲会直接丢失，只有 URL 能保证首帧渲染
+前生效。
+
+#### 6. 为什么必须经 HTTP 服务加载、`file://` 不行
+
+入口脚本是 `<script type="module" crossorigin>`，`file://` 页面 origin 为 `null`，会被
+module script 的 CORS 检查拦截；wasm 与 `skydata/*`/`sky-i18n/*.json` 等数据源均用
+`fetch()` 加载，不支持 `file:`；Flutter 的 `loadFlutterAsset` 拼不出带 query 的 URL，
+第 5 节的 URL 播种参数也就无法工作。
+

@@ -302,9 +302,9 @@ export default {
             core.dss.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/dss' })
             // Hα narrow-band survey overlay (MDW in the north; WHAM south later).
             // Off by default and fov-gated, so tiles are only fetched once the
-            // user turns it on and zooms in. Pilot build (NGC7000 region) lives
-            // under apps/skydata/surveys/halpha; see the make-halpha-survey
-            // pipeline and the internal design notes.
+            // user turns it on and zooms in. This is an optional dataset not
+            // shipped in this repository (the layer stays off by default);
+            // see the make-halpha-survey pipeline and the internal design notes.
             core.halpha.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/halpha' })
             core.minor_planets.addDataSource({ url: process.env.BASE_URL + 'skydata/mpcorb.dat', key: 'mpc_asteroids' })
             core.planets.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/sso/moon', key: 'moon' })

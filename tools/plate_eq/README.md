@@ -54,9 +54,8 @@ draws stars from its catalog). They are different products, not replacements.
 The other scripts are earlier stages and abandoned experiments (per-region DC
 solves, membrane solves, SeamNet, GraXpert trials, halo restamping, chroma-cast
 cleaner). They are kept for provenance; the design decisions and dead-ends are
-documented in the project memory (`project-dss-background-seam.md`). The heavy
-data artifacts (model checkpoints, `.npz` fields, reference clones) were left in
-the scratchpad and are not vendored here.
+documented in internal design notes. The heavy data artifacts (model
+checkpoints, `.npz` fields, reference clones) are not vendored here.
 
 Environment: `.venv-clean-dss` (numpy2, scipy, opencv, healpy, astropy,
 photutils 3.0, torch+MPS). No matplotlib.

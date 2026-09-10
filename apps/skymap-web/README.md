@@ -1,11 +1,9 @@
 # SkyMap web layer
 
-This directory contains the Graphical User Interface for using
-Stellarium Web Engine in a web page.
-
-This is a Vue 3 + Vuetify 3 project, bundled with Vite.
-
-Official page: [stellarium-web.org](https://stellarium-web.org)
+This directory is the SkyMap embeddable web layer built on the Stellarium Web
+Engine: a Vue 3 + Vuetify 3 project, bundled with Vite. It builds into
+`dist.zip` for host apps to embed; see [USAGE.md](USAGE.md) for the bridge
+contract.
 
 ## Build and run
 

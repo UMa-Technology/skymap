@@ -1,6 +1,6 @@
 /* castclean — plate colour-cast removal.  See castclean.h for the overview
- * and docs/superpowers/specs/2026-07-12-chroma-cast-removal-design.md for the
- * algorithm derivation.  Dependency-free C99. */
+ * and the internal design notes for the algorithm derivation.
+ * Dependency-free C99. */
 #include "castclean.h"
 
 #include <math.h>

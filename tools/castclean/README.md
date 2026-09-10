@@ -14,9 +14,8 @@ galaxies — is preserved by construction: corrections only happen where
 plate evidence exists (dead-channel levels/texture, or chroma steps with no
 matching luminance step). Luminance structure is never repainted.
 
-Algorithm derivation, tuning history and validation:
-`docs/superpowers/specs/2026-07-12-chroma-cast-removal-design.md`.
-Distilled from studying GraXpert's and Siril's background-extraction /
+Algorithm derivation, tuning history and validation are documented in the
+internal design notes. Distilled from studying GraXpert's and Siril's background-extraction /
 colour-calibration code, extended with piecewise plate handling
 (chroma-Poisson seam cutting, membrane inpainting, dead-plate resynthesis)
 that neither tool has.

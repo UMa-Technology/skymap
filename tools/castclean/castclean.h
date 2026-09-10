@@ -9,8 +9,8 @@
  *  - seam casts: straight-edged plate footprints whose colour balance is
  *    shifted (orange or blue blocks / diamonds).
  *
- * Method (see docs/superpowers/specs/2026-07-12-chroma-cast-removal-design.md
- * in stellarium-web-engine for the full derivation and tuning history):
+ * Method (documented in the internal design notes for the full derivation
+ * and tuning history):
  * star-robust cell backgrounds -> opponent space (u=R-G, v=B-G) -> dead-
  * channel evidence (level + texture tests, hysteresis growth) + chroma-only
  * seam edges (chroma step without a luminance step, multiscale) -> membrane /

@@ -11,7 +11,7 @@
 #         apps/skydata/skycultures/western/index.json  (+ "common_names")
 #         apps/skydata/sky-i18n/{lang}.json             (App names overlaid)
 #
-# Name policy (project memory task #6): proper names live in the skyculture
+# Name policy: proper names live in the skyculture
 # common_names (english only, so translation flows via sys_translate); the eph
 # id list holds catalog designations only, so the map shows the proper name when
 # one exists (any length) else the catalog id. Named stars are excluded from the

@@ -8,7 +8,7 @@
 # don't match in brightness/colour. Fully-automatic detection of these across all
 # 3840 tiles proved infeasible without also flagging real galaxies/nebulae (a
 # single 512^2 tile is the wrong scale -- plate seams are a global, multi-tile
-# phenomenon; see docs/superpowers/plans/notes/dss-detector-bakeoff.md). So this
+# phenomenon; see the internal design notes). So this
 # tool is SEMI-automatic: you pass the tiles you've confirmed contain colour
 # blocks, and it repairs only the order-3 parent regions those tiles fall in.
 #

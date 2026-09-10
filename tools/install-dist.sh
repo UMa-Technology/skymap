@@ -5,9 +5,9 @@
 #   tools/install-dist.sh <app-root> [--from <dir>]
 #
 # 从 <dir>（缺省 apps/skymap-web）取 dist.zip / dist.zip.sha256 / dist.zip.json，
-# 校验 sha 后拷到 <app-root>/assets/，同名旧文件先删。手工 cp 不再是流程的一部分：
-# sidecar 跟着 zip 走，App 仓里 assets/dist.zip.json 就是「这份 dist 对应哪个
-# commit」的账本。
+# 校验 sha 后拷到 <app-root>/assets/，同名旧文件先删，供本地使用。这只是拷文件：
+# App 仓自己的来源账本是 skymap-dist.lock，由各仓的 bin/skymap_dist.py 记录维护，
+# 不是这里拷过去的 assets/dist.zip.json。
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

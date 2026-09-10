@@ -235,14 +235,12 @@ SIZE=$(wc -c < "$OUT_ZIP" | tr -d ' ')
 SHA=$(shasum -a 256 "$OUT_ZIP" | cut -d' ' -f1)
 
 # ---------------------------------------------------------------------------
-# sidecar：来源信息写在 zip 旁边，**不进 zip**。zip 里塞任何随 commit 变的东西
-# 都会让 docs-only 提交后的重打包也换 sha，进而触发手机端一次 80MB 的重解压。
-#   dist.zip.sha256  shasum -a 256 格式，`shasum -c` 可直接校验
-#   dist.zip.json    commit / dirty / stale / engine_wasm_sha256
-# engine_wasm_sha256 用来区分「只重建了前端」和「引擎也重编了」——陈旧检查靠
-# mtime 猜，这个字段是硬证据。stale 是陈旧检查的结论：true 表示 dist/ 比源码旧，
-# 此时 commit 记的是打包时 HEAD 而不是产出这份 dist 的提交。暂存目录此刻还在
-#（trap 到脚本结束才清）。
+# sidecar：来源信息写在 zip 旁边——dist.zip.sha256（shasum -a 256 格式，`shasum -c`
+# 可直接校验）与 dist.zip.json（字段 commit / dirty / stale / engine_wasm_sha256 /
+# version）。version 读自 skymap-base.json：vite 构建把它写在 dist/ 根目录，随
+# STAGE_DIR 一起打进 zip 里（宿主可从包内读到），并不只是旁边的 sidecar。
+# 相同源码 + 相同 version 打出的 zip 字节是稳定的；version 同时烤进了 JS bundle，
+# 所以换 version 本就会合理地改变 zip 的 sha。
 # ---------------------------------------------------------------------------
 printf '%s  %s\n' "$SHA" "$(basename "$OUT_ZIP")" > "$OUT_ZIP.sha256"
 

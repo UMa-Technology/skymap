@@ -2,7 +2,7 @@
 directional-opening high-pass -> HoughLinesP -> merge -> weighted-PCA refine ->
 perpendicular profile measure -> score. Size-parametric (512 tiles or the 1024 region
 stitch) and +/- polarity (bright trails or dark artifacts). Ported from
-docs/superpowers/plans/notes/dss-phase2-research/streaks/streaklib.py."""
+the internal design notes."""
 import numpy as np
 import cv2
 

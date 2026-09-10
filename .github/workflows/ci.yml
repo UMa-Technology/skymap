@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: pip install scons fonttools brotli pytest
+      - run: pip install scons fonttools==4.60.2 brotli==1.2.0 pytest
 
       - uses: mymindstorm/setup-emsdk@v14
         with:

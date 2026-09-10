@@ -6,7 +6,7 @@ a clean guide channel, which real DSS trails never provide (research: red trails
 R:G:B ~ 1:0.71:0.53, i.e. >=53% into every channel). Crossing stars survive because the
 profile is a median over the line: a star's flux is an along-track outlier that the
 median does not capture, so only the trail component is subtracted. See spec 2026-07-11
-§3.3 and docs/superpowers/plans/notes/dss-phase2-research/CALIBRATION.md."""
+§3.3 and the internal design notes."""
 import numpy as np
 import cv2
 from skimage.feature import peak_local_max

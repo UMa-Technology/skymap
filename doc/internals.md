@@ -11,7 +11,6 @@ Stellarium Web Engine internals
     src/utils/          Utility code.
 
     tools/              Various python scripts.
-    html/               Minimal html website for testing the js version.
     data/               Data (need to be filled with tools/makedata.py).
 
 

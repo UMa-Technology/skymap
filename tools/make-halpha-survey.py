@@ -2,8 +2,7 @@
 """Build the offline Hα sky-survey HiPS from the MDW DR1 star-removed fields.
 
 End-to-end pipeline (proven on the North America / Pelican pilot, fields
-1518+1519); see the internal design notes
-and the memory note project-halpha-survey-layer.
+1518+1519); see the internal design notes.
 
   1. select fields  - from MDW's DR1 CSV manifest (a field list, or an RA/Dec
                       box, or the whole northern survey).
@@ -252,7 +251,7 @@ def run_hipsgen(java, jar, stagedir, hipsdir):
     # ONE pass over every staged field -- hipsgen APPEND must never be used
     # here: its cross-batch merge is mergeOverwrite (not weighted), it drops
     # border= for its internal temp build, and it loses batch-only sky from the
-    # upper orders (all silently; see the memory note). mode=overlayFading is
+    # upper orders (all silently). mode=overlayFading is
     # THE inter-field seam fix: fields sit at different additive sky levels
     # (nightly airglow; MDW's calibration is point-source only), and the default
     # overlayMean hard-averages the overlap, so the contributor set jumps at the

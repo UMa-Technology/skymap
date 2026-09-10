@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: pip install scons fonttools brotli
+      - run: pip install scons fonttools==4.60.2 brotli==1.2.0
 
       - uses: mymindstorm/setup-emsdk@v14
         with:
@@ -46,6 +46,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
+          git status --porcelain
           shasum -a 256 -c dist.zip.sha256
           v=$(unzip -p dist.zip skymap-base.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
           test "$v" = "$TAG" || { echo "skymap-base.json version '$v' != tag '$TAG'"; exit 1; }
