@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 <template>
   <framing-overlay ref="framing" />
 </template>
@@ -268,7 +274,7 @@ export default {
           this.$stel.core.landscapes.visible = visible
           this.updateState()
         },
-        // 自定义地平线（window.CustomHorizon 单向桥，见 dev_docs/app-embedding-handoff.md §2.1）
+        // 自定义地平线（window.CustomHorizon 单向桥，见 USAGE.md）
         // profile: [[az,alt]] | [{az,alt}] | {points:[{az,alt}]}，az/alt 单位为度。
         // 非法/空廓线等价于清除；引擎侧默认隐藏，set 后需 showCustomHorizon(true) 才显示。
         setCustomHorizon: (profile) => {
@@ -415,7 +421,7 @@ export default {
         },
         unselect: () => {
           // 引擎只在手动拖动时自动解除跟踪锁，取消选中必须连 lock 一起清
-          //（见 dev_docs/app-embedding-handoff.md §2.7），否则相机会一直追着
+          //（见 USAGE.md），否则相机会一直追着
           // 已取消选中的天体。新基座引擎已支持直接写 core.lock = 0。
           this.$stel.core.lock = 0
           this.$stel.core.selection = 0

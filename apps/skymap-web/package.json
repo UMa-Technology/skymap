@@ -1,9 +1,9 @@
 {
-  "name": "stellarium-web",
+  "name": "skymap-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Stellarium Web is an online planetarium that lets you discover the night sky. It's easy to use and beautiful.",
-  "author": "Stellarium Labs <contact@stellarium-labs.com>",
+  "description": "SkyMap web layer: the embeddable star-map page built on the Stellarium Web Engine fork.",
+  "author": "Suzhou UMa Technology Co., Ltd",
   "engines": {
     "node": ">=20.19"
   },

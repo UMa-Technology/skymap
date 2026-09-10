@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // 钉死对外协议：window.StellariumActions 的 47 个键与 getState 回包的 31 个键。
 // 取景功能拆出去之后，两份清单由 jsbridge.vue 与 framing-overlay.vue 共同凑齐，
 // 且两边不许重名。纯静态：读源码、正则提取，不起 Vue、不碰 DOM。

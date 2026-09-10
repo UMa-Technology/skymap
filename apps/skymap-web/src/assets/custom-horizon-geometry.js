@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // Pure geometry/interpolation for the custom horizon silhouette.
 // No engine or DOM access — unit-testable in isolation.
 // Coordinates are [az, alt] degrees. Used by custom-horizon.js to normalize a

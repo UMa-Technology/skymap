@@ -48,3 +48,5 @@ tools/halpha-build/
 /.superpowers
 # DSS castclean 的本地输出（tools/plate_eq/assemble.py 读），不进库
 /dss-cast-cleaned/
+!tools/.fontcache/LICENSES.md
+!tools/.fontcache/OFL.txt

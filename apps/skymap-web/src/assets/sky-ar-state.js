@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // AR 模式的纯状态逻辑，不碰 DOM、不碰引擎实例，便于在 node 环境下单测
 // （vitest 配的是 environment: 'node'，没有 jsdom）。DOM 与引擎交互在 sky-ar.js。
 // 与 custom-horizon-geometry.js / custom-horizon.js 的拆分方式一致。

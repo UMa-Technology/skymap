@@ -17,7 +17,7 @@
 
 <script>
 // App 嵌入形态：标准 GUI（toolbar/bottom-bar/选中面板等）整体替换为
-// jsbridge 产品 UI + postMessage 桥（见 dev_docs/app-embedding-handoff.md §7）
+// jsbridge 产品 UI + postMessage 桥（见 USAGE.md）
 import JsBridge from '@/components/jsbridge.vue'
 import JsBridgeSelectedObject from '@/components/jsbridge-selected-object.vue'
 

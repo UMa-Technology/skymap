@@ -12,7 +12,7 @@ import get from 'lodash/get'
 
 // Vuex 4. state.stel holds the WASM engine tree snapshot (lstel.getTree());
 // it is deeply reactive under Vue 3, and sw_helpers.js mutates it per-frame via
-// lodash.set (see the reactivity-bridge spike in dev_docs/vue3-migration-scope).
+// lodash.set (see the reactivity-bridge spike in the internal design notes).
 export default createStore({
   state: {
     stel: null,

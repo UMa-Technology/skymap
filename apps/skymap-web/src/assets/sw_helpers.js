@@ -56,7 +56,7 @@ const skyCatalogCache = {}          // lang -> catalog object (memoized fetch)
 // sky's first frame is painted, safe to reveal the WebView — no black flash).
 // window.__stelReady resolves with the engine instance at 'firstFrame'. The
 // postMessage half of the contract is emitted by App.vue (embedded frontend).
-// See dev_docs/app-embedding-handoff.md §2.9.
+// See USAGE.md.
 let _resolveStelReady = null
 const _stelReadyPromise = (typeof window !== 'undefined')
   ? new Promise(function (res) { _resolveStelReady = res })

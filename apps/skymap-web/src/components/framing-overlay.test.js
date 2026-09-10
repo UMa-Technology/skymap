@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'

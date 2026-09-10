@@ -10,7 +10,7 @@ export default defineConfig(() => {
   // 挂载路径（端口 / 子目录）由宿主决定，自定义 scheme 同理——写死绝对路径的
   // /assets、/skydata 一换挂载点就 404。
   // ⚠️ file:// 不是可选加载方式（走不通的原因见
-  //    dev_docs/app-embedding-handoff.md §3），相对 base 与它无关。
+  //    USAGE.md），相对 base 与它无关。
   // CDN_ENV 保留旧 vue.config.js 的 CDN 覆盖语义。base 与 BASE_URL 必须一致。
   const base = process.env.CDN_ENV || './'
   return {

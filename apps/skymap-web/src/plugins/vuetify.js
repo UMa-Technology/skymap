@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // Subset of @mdi/font with only the icons this app + Vuetify's defaults use
 // (2.9 KB woff2 instead of the full 404 KB + 350 KB css). Regenerate with
 // tools/make-mdi-subset.py after adding icons or upgrading Vuetify.

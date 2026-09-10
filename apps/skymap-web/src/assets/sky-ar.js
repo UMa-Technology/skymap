@@ -1,3 +1,9 @@
+// SkyMap - Copyright (C) 2026 Suzhou UMa Technology Co., Ltd
+//
+// This program is licensed under the terms of the GNU AGPL v3.
+// The terms of the AGPL v3 license can be found in the main directory of this
+// repository.
+
 // Engine glue for AR mode — 相机垫底 + 星图半透明。结构上克隆自 sky-photos.js。
 //
 // 宿主（Flutter）在 AR 开启时把手机相机预览垫在 webview 之后，本模块负责页面这一侧：

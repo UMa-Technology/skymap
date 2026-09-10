@@ -1,4 +1,4 @@
-# Stellarium Web frontend
+# SkyMap web layer
 
 This directory contains the Graphical User Interface for using
 Stellarium Web Engine in a web page.
@@ -11,7 +11,7 @@ Official page: [stellarium-web.org](https://stellarium-web.org)
 
 Prerequisites: Node >= 20.19 (Node 24 recommended), plus the emscripten SDK
 and scons for building the engine. See
-[../../dev_docs/local-build-and-run.md](../../dev_docs/local-build-and-run.md)
+the root [README](../../README.md)
 for the full setup and rationale.
 
 ``` bash

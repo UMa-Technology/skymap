@@ -1,5 +1,12 @@
 # 更新日志
 
+## 2026-09-11 分仓
+
+1. 本仓库从内部 fork 树中独立建立（不带历史），上游合并基 `be43d6436`（2026-05-09），此后不再同步上游。
+2. 退役标准 GUI 树 `apps/web-frontend`；web 层改名 `apps/skymap-web`，工具链只认这一棵树。
+3. 协议握手：`window.SkymapBase`、`initProgress` 消息的 `base` 字段、`dist.zip` 内 `skymap-base.json`、`dist.zip.json` 的 `version`。
+4. GitHub Actions：`main` 构建门；打 `v*` tag 自动构建并把 `dist.zip` 三件发布到 Release。
+
 ## 2026-07-08 ~ 2026-07-15 优化冲刺
 
 ### 离线化与构建

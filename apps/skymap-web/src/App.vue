@@ -157,7 +157,7 @@ export default {
 
           // No browser/GeoIP auto-detection: the location is supplied by the
           // host (Flutter) app via `$stel.core.observer.latitude/longitude/
-          // elevation` (see dev_docs/app-embedding-handoff.md §2.4) or by the
+          // elevation` (see USAGE.md) or by the
           // ?lat=&lng= URL query args (handled in setStateFromQueryArgs). If
           // nothing is supplied the engine keeps its default observer.
 
@@ -298,13 +298,13 @@ export default {
             // covers wider views). dss.c fades it in as the Milky Way fades out.
             // The survey is the star-removed, plate-seam-cleaned build (the
             // engine draws stars from its catalog on top); see
-            // dev_docs/dss-plate-equalization.md and tools/plate_eq/.
+            // the internal design notes and tools/plate_eq/.
             core.dss.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/dss' })
             // Hα narrow-band survey overlay (MDW in the north; WHAM south later).
             // Off by default and fov-gated, so tiles are only fetched once the
             // user turns it on and zooms in. Pilot build (NGC7000 region) lives
             // under apps/skydata/surveys/halpha; see the make-halpha-survey
-            // pipeline and dev_docs spec.
+            // pipeline and the internal design notes.
             core.halpha.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/halpha' })
             core.minor_planets.addDataSource({ url: process.env.BASE_URL + 'skydata/mpcorb.dat', key: 'mpc_asteroids' })
             core.planets.addDataSource({ url: process.env.BASE_URL + 'skydata/surveys/sso/moon', key: 'moon' })
