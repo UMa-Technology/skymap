@@ -1,0 +1,8 @@
+hips_order            = 2
+hips_order_min        = 0
+hips_tile_width       = 512
+hips_tile_format      = webp
+dataproduct_type      = image
+obs_title             = DesertScape
+hips_release_date     = 2026-07-23T16:25Z
+type                  = landscape

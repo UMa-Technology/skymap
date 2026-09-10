@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<!-- Staircase-seam annotation picker (template; deployed by tools/scan-dss-staircase.py).
+     For each candidate tile: confirm the artifact, DRAG a centre line along the
+     defective strip, tune its width. Multiple strips per tile OK. Export JSON,
+     then run:  python3 tools/fix-dss-strips.py --annotations <file> -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>DSS staircase 标注</title>
+<style>
+  body { margin:0; display:flex; height:100vh; background:#111; color:#ddd;
+         font:13px/1.5 -apple-system, "PingFang SC", sans-serif; }
+  #side { width:230px; overflow-y:auto; border-right:1px solid #333; padding:8px; }
+  .th { display:flex; align-items:center; gap:8px; padding:3px 4px; cursor:pointer;
+        border-radius:6px; }
+  .th:hover { background:#222; } .th.cur { background:#2a3550; }
+  .th img { width:56px; height:56px; border-radius:4px; }
+  .th .done { color:#5c5; } .th .skip { color:#888; text-decoration:line-through; }
+  #main { flex:1; display:flex; flex-direction:column; align-items:center;
+          padding:10px; overflow:auto; }
+  #bar { margin-bottom:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  canvas { border:1px solid #444; cursor:crosshair; }
+  button { background:#2a3550; color:#ddd; border:1px solid #456; border-radius:6px;
+           padding:4px 12px; cursor:pointer; } button:hover { background:#39508a; }
+  textarea { width:640px; height:70px; background:#191919; color:#9c9;
+             border:1px solid #333; margin-top:8px; }
+  .hint { color:#888; }
+</style>
+</head>
+<body>
+<div id="side"></div>
+<div id="main">
+  <div id="bar">
+    <b id="title"></b>
+    <label><input type="checkbox" id="ov"> 检测叠加(O)</label>
+    <label>宽度 <input type="range" id="w" min="24" max="320" value="160">
+           <span id="wv">160</span>px</label>
+    <button id="undo">撤销一条(U)</button>
+    <button id="skipBtn">无问题,跳过(X)</button>
+    <span class="hint">拖拽画中心线 | ←/→ 切换瓦片</span>
+  </div>
+  <canvas id="cv" width="640" height="640"></canvas>
+  <div id="bar2" style="margin-top:8px">
+    <button id="exp">导出标注 JSON</button>
+    <span id="stat" class="hint"></span>
+  </div>
+  <textarea id="out" placeholder="导出的 JSON 会出现在这里,复制发给 Claude"></textarea>
+</div>
+<script>
+const S = 640 / 512;                       // display scale (coords stored in 512-space)
+let cands = [], cur = 0, drag = null, store, save, KEY;
+
+fetch('candidates.json').then(r => r.json()).then(j => {
+  // candidates.json: either a plain array (round 1) or {round: N, tiles: [...]}
+  // for refinement passes. Each round gets its OWN localStorage bucket so a
+  // round-2 export never drags in already-applied round-1 annotations.
+  const round = Array.isArray(j) ? 1 : (j.round || 1);
+  cands = Array.isArray(j) ? j : j.tiles;
+  KEY = 'staircase-ann' + (round > 1 ? '-r' + round : '');
+  store = JSON.parse(localStorage.getItem(KEY) || '{"tiles":{},"skipped":[]}');
+  save = () => localStorage.setItem(KEY, JSON.stringify(store));
+  document.title += round > 1 ? ` (round ${round})` : '';
+  buildSide(); show(0);
+});
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const img = new Image(), ovImg = new Image();
+const $ = id => document.getElementById(id);
+
+function buildSide() {
+  const side = $('side'); side.innerHTML = '';
+  cands.forEach((c, i) => {
+    const anns = (store.tiles[c.npix] || []).length;
+    const skipped = store.skipped.includes(c.npix);
+    const d = document.createElement('div');
+    d.className = 'th' + (i === cur ? ' cur' : '');
+    d.innerHTML = `<img src="imgs/Npix${c.npix}.png" loading="lazy">
+      <span class="${anns ? 'done' : skipped ? 'skip' : ''}">
+      ${c.npix}<br><small>${c.score}${anns ? ' ✓' + anns : ''}</small></span>`;
+    d.onclick = () => show(i);
+    side.appendChild(d);
+  });
+  const n = Object.keys(store.tiles).length;
+  $('stat').textContent = `已标注 ${n} 瓦片 / 跳过 ${store.skipped.length} / 共 ${cands.length}`;
+}
+function show(i) {
+  cur = Math.max(0, Math.min(cands.length - 1, i));
+  const c = cands[cur];
+  $('title').textContent = `Npix${c.npix}  (score ${c.score})  [${cur + 1}/${cands.length}]`;
+  ctx.clearRect(0, 0, 640, 640);           // never leave the previous tile up
+  img.src = `imgs/Npix${c.npix}.png`; ovImg.src = `imgs/Npix${c.npix}_ov.png`;
+  img.onload = ovImg.onload = draw;
+  img.onerror = () => { ctx.fillStyle = '#f66';
+    ctx.fillText(`imgs/Npix${c.npix}.png 加载失败`, 20, 30); };
+  buildSide();
+}
+function strips() { return store.tiles[cands[cur].npix] || []; }
+function draw() {
+  ctx.clearRect(0, 0, 640, 640);
+  ctx.drawImage($('ov').checked ? ovImg : img, 0, 0, 640, 640);
+  for (const st of strips()) drawStrip(st, '#4af');
+  if (drag) drawStrip({ ...drag, w: +$('w').value }, '#fa4');
+}
+function drawStrip(st, color) {
+  const dx = st.x1 - st.x0, dy = st.y1 - st.y0, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L * st.w / 2, ny = dx / L * st.w / 2;
+  ctx.save(); ctx.globalAlpha = .25; ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo((st.x0 + nx) * S, (st.y0 + ny) * S);
+  ctx.lineTo((st.x1 + nx) * S, (st.y1 + ny) * S);
+  ctx.lineTo((st.x1 - nx) * S, (st.y1 - ny) * S);
+  ctx.lineTo((st.x0 - nx) * S, (st.y0 - ny) * S);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = .9; ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(st.x0 * S, st.y0 * S); ctx.lineTo(st.x1 * S, st.y1 * S);
+  ctx.stroke(); ctx.restore();
+}
+// canvas-relative coords in 512-space (clientLeft/Top: skip the 1px border)
+const pos = e => { const r = cv.getBoundingClientRect();
+  return [(e.clientX - r.left - cv.clientLeft) / S,
+          (e.clientY - r.top - cv.clientTop) / S]; };
+cv.onmousedown = e => { const [x, y] = pos(e);
+  drag = { x0: x, y0: y, x1: x, y1: y }; };
+cv.onmousemove = e => { if (!drag) return;
+  [drag.x1, drag.y1] = pos(e); draw(); };
+// window-level: releasing OUTSIDE the canvas must still end the drag
+window.onmouseup = () => {
+  if (drag && Math.hypot(drag.x1 - drag.x0, drag.y1 - drag.y0) > 15) {
+    const np = cands[cur].npix;
+    (store.tiles[np] = store.tiles[np] || []).push(
+      { x0: +drag.x0.toFixed(1), y0: +drag.y0.toFixed(1),
+        x1: +drag.x1.toFixed(1), y1: +drag.y1.toFixed(1), w: +$('w').value });
+    store.skipped = store.skipped.filter(p => p !== np); save();
+  }
+  drag = null; draw(); buildSide();
+};
+$('w').oninput = () => { $('wv').textContent = $('w').value; draw(); };
+$('ov').onchange = draw;
+$('undo').onclick = () => { const np = cands[cur].npix, a = store.tiles[np];
+  if (a) { a.pop(); if (!a.length) delete store.tiles[np]; save(); draw(); buildSide(); } };
+$('skipBtn').onclick = () => { const np = cands[cur].npix;
+  // never silently destroy drawn strips: skip requires explicit confirmation
+  if ((store.tiles[np] || []).length &&
+      !confirm(`Npix${np} 已有 ${store.tiles[np].length} 条标注,确认删除并标记为无问题?`))
+    return;
+  if (!store.skipped.includes(np)) store.skipped.push(np);
+  delete store.tiles[np]; save(); show(cur + 1); };
+$('exp').onclick = () => {
+  $('out').value = JSON.stringify({ tiles: store.tiles }, null, 1);
+  $('out').select(); document.execCommand('copy');
+};
+document.onkeydown = e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') show(cur + 1);
+  if (e.key === 'ArrowLeft') show(cur - 1);
+  if (e.key === 'o' || e.key === 'O') { $('ov').checked = !$('ov').checked; draw(); }
+  if (e.key === 'u' || e.key === 'U') $('undo').onclick();
+  if (e.key === 'x' || e.key === 'X') $('skipBtn').onclick();
+};
+</script>
+</body>
+</html>

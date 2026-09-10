@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSS tile picker — flag plate-seam blocks</title>
+<style>
+  :root{
+    --bg:#0a0d14; --panel:#121826; --line:#232c40; --ink:#d7dce7; --soft:#93a0b8;
+    --accent:#7fb0e6; --streak:#ff6b6b; --defect:#ffcf5a; --seam:#7fb0e6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:rgba(10,13,20,.96);
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:12px 16px}
+  h1{font:600 16px/1.2 Georgia,serif;margin:0 0 8px}
+  .row{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center}
+  .ctl{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--soft)}
+  .ctl input[type=range]{width:104px;accent-color:var(--accent)}
+  .val{font-family:ui-monospace,Menlo,monospace;color:var(--ink);min-width:30px;text-align:right}
+  button{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:7px;padding:7px 13px;font-size:13px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#06101c;border-color:var(--accent);font-weight:600}
+  .count{font-family:ui-monospace,Menlo,monospace;color:var(--sel);font-weight:600}
+  .hint{color:var(--soft);font-size:12px;margin:6px 0 0}
+  #grid{display:grid;gap:10px;padding:16px;
+    grid-template-columns:repeat(auto-fill,minmax(var(--cell,220px),1fr))}
+  .tile{position:relative;border:2px solid var(--line);border-radius:8px;overflow:hidden;
+    cursor:pointer;background:#000;aspect-ratio:1/1}
+  .tile img{width:100%;height:100%;display:block;object-fit:cover;
+    filter:brightness(var(--b,1.6)) contrast(var(--c,1.5)) saturate(var(--s,2.6))}
+  .tile .lbl{position:absolute;left:0;bottom:0;right:0;padding:3px 6px;
+    font:600 11px/1.3 ui-monospace,Menlo,monospace;color:#cfe0f5;
+    background:linear-gradient(transparent,rgba(0,0,0,.82));display:flex;justify-content:space-between}
+  .tile .sc{color:var(--soft);font-weight:400}
+  .tile.streak{border-color:var(--streak);box-shadow:0 0 0 2px rgba(255,107,107,.16) inset}
+  .tile.defect{border-color:var(--defect);box-shadow:0 0 0 2px rgba(255,207,90,.16) inset}
+  .tile.seam{border-color:var(--seam);box-shadow:0 0 0 2px rgba(127,176,230,.16) inset}
+  .tile .tag{position:absolute;top:5px;right:6px;padding:1px 6px;border-radius:10px;
+    font:700 10px/1.4 ui-monospace,Menlo,monospace;color:#06101c;z-index:2}
+  .tile.streak .tag{background:var(--streak)} .tile.defect .tag{background:var(--defect)}
+  .tile.seam .tag{background:var(--seam)}
+  .tile canvas.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;
+    padding:0;max-width:min(680px,92vw);width:100%}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .dlg-b{padding:18px 20px}
+  dialog h2{font:600 15px Georgia,serif;margin:0 0 4px}
+  textarea{width:100%;height:130px;background:#0b0f18;color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;resize:vertical}
+  .dlg-f{display:flex;gap:10px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <h1>DSS tile picker — flag streaks / defects / seams</h1>
+  <div class="row">
+    <span>Selected: <span class="count" id="count">0</span></span>
+    <div class="ctl">bright<input type="range" id="b" min="1" max="4" step="0.1" value="1.6"><span class="val" id="bv">1.6</span></div>
+    <div class="ctl">contrast<input type="range" id="c" min="1" max="4" step="0.1" value="1.5"><span class="val" id="cv">1.5</span></div>
+    <div class="ctl">saturate<input type="range" id="s" min="1" max="6" step="0.1" value="2.6"><span class="val" id="sv">2.6</span></div>
+    <div class="ctl">size<input type="range" id="z" min="140" max="380" step="10" value="220"><span class="val" id="zv">220</span></div>
+    <div class="ctl">sort
+      <select id="sort" style="background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px">
+        <option value="score">structure score ▼ (candidates first)</option>
+        <option value="npix">Npix order (spatial)</option>
+      </select>
+    </div>
+    <label class="ctl" style="cursor:pointer"><input type="checkbox" id="unflagged" style="accent-color:var(--accent)"> only unflagged <span class="val" id="shown"></span></label>
+    <button id="export" class="primary">Export list →</button>
+    <button id="clear">Clear</button>
+  </div>
+  <p class="hint">Amplified so faint artifacts show. <b>Click a tile to cycle its label:</b>
+  <span style="color:var(--streak)">streak</span> →
+  <span style="color:var(--defect)">defect</span> →
+  <span style="color:var(--seam)">seam</span> → none.
+  Red overlay lines = detected streak candidates; <b>⚠</b> = dense (galactic-plane) tile — verify carefully.
+  Selection auto-saves in this browser. <b>Export list</b> and paste it back to me.</p>
+</header>
+
+<div id="grid"></div>
+
+<dialog id="dlg">
+  <div class="dlg-b">
+    <h2>Your selection (<span id="dlgn">0</span> tiles)</h2>
+    <p class="hint">Copy this and paste it back in chat. It is the exact <code>--seam-tiles</code> argument.</p>
+    <textarea id="out" readonly></textarea>
+  </div>
+  <div class="dlg-f">
+    <button id="copy" class="primary">Copy</button>
+    <button id="close">Close</button>
+  </div>
+</dialog>
+
+<script>
+const BASE = '/skydata/surveys/dss/Norder3/Dir0/';
+const CYCLE = ['streak', 'defect', 'seam'];
+const grid = document.getElementById('grid');
+let streaks = {};                          // {npix: {score, dense, groups:[...]}}
+let scores = {};                           // {npix: number} for ordering
+
+// selection: Map<npix, class>. Migrate the old boolean dss_sel -> all 'seam'.
+function loadSel(){
+  const v2 = localStorage.getItem('dss_sel_v2');
+  if(v2) return new Map(Object.entries(JSON.parse(v2)).map(([k,v]) => [+k, v]));
+  const v1 = JSON.parse(localStorage.getItem('dss_sel') || '[]');
+  return new Map(v1.map(n => [+n, 'seam']));
+}
+const sel = loadSel();
+
+function save(){
+  localStorage.setItem('dss_sel_v2', JSON.stringify(Object.fromEntries(sel)));
+  document.getElementById('count').textContent = sel.size;
+}
+function cycle(n){
+  const cur = sel.get(n);
+  if(!cur){ sel.set(n, CYCLE[0]); return CYCLE[0]; }
+  const i = CYCLE.indexOf(cur);
+  if(i < CYCLE.length - 1){ const nx = CYCLE[i+1]; sel.set(n, nx); return nx; }
+  sel.delete(n); return null;
+}
+function applyClass(d, n){
+  d.className = 'tile' + (sel.has(n) ? ' ' + sel.get(n) : '');
+  let tag = d.querySelector('.tag');
+  if(sel.has(n)){ if(!tag){ tag = document.createElement('div'); tag.className='tag'; d.appendChild(tag);} tag.textContent = sel.get(n); }
+  else if(tag){ tag.remove(); }
+}
+function drawOverlay(cv, n){
+  const gs = (streaks[n] && streaks[n].groups) || [];
+  const ctx = cv.getContext('2d'); ctx.clearRect(0,0,512,512);
+  ctx.strokeStyle = 'rgba(255,80,80,.9)'; ctx.lineWidth = 1.5;
+  for(const g of gs){ if(g.score < 4) continue;
+    ctx.beginPath(); ctx.moveTo(g.p0[0], g.p0[1]); ctx.lineTo(g.p1[0], g.p1[1]); ctx.stroke(); }
+}
+function render(){
+  const order = document.getElementById('sort').value;
+  let npix = Object.keys(scores).map(Number);
+  npix.sort(order === 'score' ? (a,b) => scores[b]-scores[a] : (a,b) => a-b);
+  if(document.getElementById('unflagged').checked) npix = npix.filter(n => !sel.has(n));
+  document.getElementById('shown').textContent = '(' + npix.length + ')';
+  grid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for(const n of npix){
+    const d = document.createElement('div'); d.dataset.n = n; applyClass(d, n);
+    const img = document.createElement('img');
+    img.loading = 'lazy'; img.src = BASE + 'Npix' + n + '.webp';
+    const cv = document.createElement('canvas'); cv.width = cv.height = 512; cv.className = 'ov';
+    const lbl = document.createElement('div'); lbl.className = 'lbl';
+    lbl.innerHTML = '<span>Npix' + n + (streaks[n] && streaks[n].dense ? ' ⚠' : '') +
+      '</span><span class="sc">' + (scores[n]!=null?scores[n].toFixed(2):'') + '</span>';
+    d.appendChild(img); d.appendChild(cv); d.appendChild(lbl);
+    img.addEventListener('load', () => drawOverlay(cv, n));
+    d.addEventListener('click', () => { cycle(n); applyClass(d, n); save(); });
+    frag.appendChild(d);
+  }
+  grid.appendChild(frag);
+}
+
+const setVar = (id, cssvar, out) => {
+  const el = document.getElementById(id);
+  const upd = () => { document.documentElement.style.setProperty(cssvar, id==='z' ? el.value+'px' : el.value);
+    document.getElementById(out).textContent = el.value; };
+  el.addEventListener('input', upd); upd();
+};
+setVar('b','--b','bv'); setVar('c','--c','cv'); setVar('s','--s','sv'); setVar('z','--cell','zv');
+document.getElementById('sort').addEventListener('change', render);
+document.getElementById('unflagged').addEventListener('change', render);
+document.getElementById('clear').addEventListener('click', () => {
+  if(confirm('Clear all '+sel.size+' labels?')){ sel.clear(); save(); render(); }});
+
+const dlg = document.getElementById('dlg');
+document.getElementById('export').addEventListener('click', () => {
+  const list = [...sel.entries()].sort((a,b)=>a[0]-b[0]).map(([n,cls]) => '3/'+n+':'+cls).join(' ');
+  document.getElementById('out').value = list;
+  document.getElementById('dlgn').textContent = sel.size;
+  dlg.showModal();
+});
+document.getElementById('copy').addEventListener('click', async () => {
+  const ta = document.getElementById('out'); ta.select();
+  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
+  document.getElementById('copy').textContent = 'Copied ✓';
+  setTimeout(()=>document.getElementById('copy').textContent='Copy', 1200);
+});
+document.getElementById('close').addEventListener('click', ()=>dlg.close());
+
+// prefer tile-streaks.json (streak scan aid); fall back to tile-scores.json then all-768.
+fetch('/tile-streaks.json').then(r=>r.ok?r.json():Promise.reject()).then(j => {
+  streaks = j; for(const k in j) scores[+k] = j[k].score || 0; save(); render();
+}).catch(() => fetch('/tile-scores.json').then(r=>r.ok?r.json():{}).then(j => {
+  scores = j; save(); render();
+}).catch(() => { for(let n=0;n<768;n++) scores[n]=0;
+  document.getElementById('sort').value='npix'; save(); render(); }));
+</script>
+</body>
+</html>

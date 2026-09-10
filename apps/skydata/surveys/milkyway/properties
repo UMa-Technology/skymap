@@ -1,0 +1,10 @@
+hips_order            = 0
+hips_order_min        = 0
+hips_tile_width       = 512
+hips_tile_format      = webp jpeg
+dataproduct_type      = image
+hips_frame            = equatorial
+obs_title             = milkyway
+hips_release_date     = 2026-07-04T15:13:14Z
+source_md5            = e81edaf9c6ee87c70f7a2811e30ae4a1
+obs_description       = Milkyway survey; galactic disk sampled directly per Healpix pixel.

@@ -1,0 +1,50 @@
+*.o
+*.swp
+*~
+*.obj
+*.pyc
+*.vimrc
+*.ycm_extra_conf.py
+/todo
+/build*
+# build-engine.sh is a committed helper; re-include it (/build* above matches it)
+!/build-engine.sh
+.sconsign.dblite
+/.cache
+Leap_Second.dat
+de421.bsp
+deltat.data
+deltat.preds
+hip_main.dat.gz
+
+# Font-build source cache: keep the source TTFs in git so make-app-fonts.py can
+# rebuild SkyFont from a clean clone (the Alibaba TTFs have no stable download
+# URL); ignore only non-font cache junk (e.g. transient merge temporaries).
+tools/.fontcache/*
+!tools/.fontcache/*.ttf
+/.venv-clean-dss/
+# local DSS cleanup work-trees (rollback backup + staging output; not shipped as-is)
+apps/skydata/surveys/dss-backup/
+apps/skydata/surveys/dss-clean/
+.claude/launch.json
+.DS_Store
+# JetBrains IDE project config — untracked (was committed; now a per-dev choice)
+.idea/
+node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+# 给 App 侧的一次性 dist 导出包（正式产物在 unigo/assets/dist.zip）
+apps/skymap-web/dist-*.zip
+# tools/make-dist-zip.sh 在 dist.zip 旁写的来源 sidecar（.sha256 / .json），
+# 本身也是构建产物，不进库；nested .gitignore 只忽略了 dist.zip 本身
+apps/skymap-web/dist.zip*
+# Raw Alibaba font source archives (huge — incl. a 278MB PuHuiTi zip). The
+# extracted source TTFs under tools/.fontcache/ are what we track instead.
+dev_docs/*.zip
+tools/plate_catalog/gsss/
+tools/halpha-build/
+# Internal documentation lives in the private docs repository. Locally these
+# paths are symlinks into it (see README "Repository layout"); never commit.
+/dev_docs
+/docs
+/.superpowers
+# DSS castclean 的本地输出（tools/plate_eq/assemble.py 读），不进库
+/dss-cast-cleaned/

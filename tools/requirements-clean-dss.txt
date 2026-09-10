@@ -1,0 +1,11 @@
+# Image-processing deps for tools/clean-dss-survey.py.
+# Build the venv with Python 3.11 (/opt/homebrew/bin/python3.11): on 3.11 the full
+# modern stack (numpy 2 + astropy 6+ + healpy + opencv 5) resolves without pins.
+# (Python 3.9 is a dead end here: astropy 5.x needs numpy<2 but recent opencv needs numpy>=2.)
+numpy>=2.0,<3
+Pillow>=10
+scikit-image>=0.24
+scipy>=1.13
+healpy>=1.17
+opencv-python-headless>=4.9
+pytest>=8

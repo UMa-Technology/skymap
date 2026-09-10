@@ -1,0 +1,4 @@
+obs_description   = DSO survey from objects_catalogs (App-consistent) for stellarium-web
+hips_order_min    = 0
+type              = dso
+hips_tile_format  = eph

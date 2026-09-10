@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Stellarium Web Online Star Map</title>
+    <meta name="description" content="Stellarium Web is a planetarium running in your web browser. It shows a realistic star map, just like what you see with the naked eye, binoculars or a telescope.">
+    <meta name="Keywords" content="Stellarium, Stellarium Web, planetarium, star map, sky map, astronomy, software, stars, planets, constellations, meteors, universe, astro, realistic, sky, milky way, moon, mercury, venus, mars, jupiter, saturn, sun, 3D, openGL, chart, map">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="theme-color" content="#000"/>
+    <style type="text/css">
+    html, body { margin: 0; background: #000; }
+    /* WebView 嵌入硬化：禁滚动/选择/长按呼出（App 内嵌形态） */
+    body, html, #app {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    #nightmode {
+      background: #FF6C20;
+      pointer-events: none;
+      height: 100vh;
+      width: 100vw;
+      position: absolute;
+      z-index: 1000;
+      mix-blend-mode: multiply;
+      visibility: hidden;
+    }
+    /* AR 模式透明链：宿主（Flutter）把相机预览垫在 webview 之后，页面这一侧必须
+       从 html 一路透到 #stel，任何一层不透明都会把相机彻底挡死。
+       由 sky-ar.js 的 SkyAR.enable() 给 <html> 挂 / 摘 .sky-ar 类来开关，
+       星图 canvas 自身的半透明度是滑块实时调的，走 inline style 不在这里。 */
+    html.sky-ar,
+    html.sky-ar body,
+    html.sky-ar #app,
+    html.sky-ar .v-application,
+    html.sky-ar .v-application__wrap,
+    html.sky-ar .v-main,
+    html.sky-ar .v-main__wrap,
+    html.sky-ar .container,
+    html.sky-ar .v-container,
+    html.sky-ar #stel {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="nightmode"></div>
+    <noscript>
+      <strong>We're sorry but stellarium-web doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

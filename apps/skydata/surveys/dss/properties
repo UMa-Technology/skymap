@@ -1,0 +1,13 @@
+hips_order            = 4
+hips_order_min        = 2
+hips_tile_width       = 512
+hips_tile_format      = webp jpeg
+dataproduct_type      = image
+hips_frame            = equatorial
+obs_title             = DSS colored (offline 2-4)
+hips_release_date     = 2026-07-09T00:00:00Z
+hips_version          = 1.31
+obs_copyright         = Digitized Sky Survey - STScI/NASA, Colored & Healpixed by CDS
+obs_copyright_url     = http://archive.stsci.edu/dss/copyright.html
+obs_description       = DSS2 color HiPS, offline subset (orders 2-4, re-encoded at webp Q90), from the CDS tiles hosted at data.stellarium.org/surveys/dss.
+creator_did           = ivo://CDS/P/DSS2/color
