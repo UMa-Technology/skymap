@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: apps/skymap-web/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/skymap-web/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install scons fonttools brotli
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.2
+          actions-cache-folder: emsdk-cache
+
+      - name: Build engine (WASM)
+        run: ./build-engine.sh
+
+      - name: Build web layer and dist.zip
+        working-directory: apps/skymap-web
+        env:
+          SKYMAP_VERSION: ${{ github.ref_name }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Self-check
+        working-directory: apps/skymap-web
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          shasum -a 256 -c dist.zip.sha256
+          v=$(unzip -p dist.zip skymap-base.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
+          test "$v" = "$TAG" || { echo "skymap-base.json version '$v' != tag '$TAG'"; exit 1; }
+          j=$(python3 -c 'import json; print(json.load(open("dist.zip.json"))["version"])')
+          test "$j" = "$TAG" || { echo "dist.zip.json version '$j' != tag '$TAG'"; exit 1; }
+          ls -l dist.zip dist.zip.sha256 dist.zip.json
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apps/skymap-web/dist.zip
+            apps/skymap-web/dist.zip.sha256
+            apps/skymap-web/dist.zip.json
+          generate_release_notes: true
