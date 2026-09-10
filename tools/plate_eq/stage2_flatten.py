@@ -20,7 +20,7 @@ import os, sys, numpy as np, cv2
 SC = os.environ.get("SCRATCH", os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SC)
 import assemble
-assemble.RAW = "/Users/larry/code/stellarium-web-engine/apps/skydata/surveys/dss-starless"
+assemble.RAW = os.path.join(assemble.ROOT, "apps", "skydata", "surveys", "dss-starless")
 assemble.CAST = "/nonexistent"
 from apron import assemble_apron
 from protect_mask import protect_mask

@@ -116,7 +116,7 @@ def new_tile(npix):
 
 if MODE == "preview":
     from scipy.spatial import cKDTree
-    OUT = "apps/web-frontend/public/plate-eq-review"
+    OUT = "apps/skymap-web/public/plate-eq-review"
     def subpix_sky(npix, step=2):
         xs = np.arange(0, W, step); X, Y = np.meshgrid(xs, xs)
         sub = (p1(Y.ravel()) | (p1(X.ravel()) << 1)); nest = npix * (W * W) + sub

@@ -10,7 +10,7 @@
 #
 # Usage:
 #   tools/make-sky-i18n.py [STELLARIUM_MASTER_DIR]
-# Default STELLARIUM_MASTER_DIR: /Users/larry/code/stellarium-master
+# Default STELLARIUM_MASTER: ../stellarium-master (a sibling checkout of Stellarium)
 # Output: apps/skydata/sky-i18n/<lang>.json  (served at /skydata/sky-i18n/)
 
 import json
@@ -21,7 +21,7 @@ import sys
 # Repo root = parent of this tools/ dir.
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MASTER = sys.argv[1] if len(sys.argv) > 1 else \
-    os.environ.get("STELLARIUM_MASTER", "/Users/larry/code/stellarium-master")
+    os.environ.get("STELLARIUM_MASTER", os.path.join(ROOT, "..", "stellarium-master"))
 PO_DIR = os.path.join(MASTER, "po", "stellarium-sky")
 OUT_DIR = os.path.join(ROOT, "apps", "skydata", "sky-i18n")
 

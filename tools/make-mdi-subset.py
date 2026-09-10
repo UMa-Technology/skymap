@@ -7,17 +7,15 @@
 # `.mdi-*::before` rules; class-based usage in the components is unchanged.
 #
 # The icon list is collected automatically from:
-#   - `mdi-*` names referenced in the src/ of both frontends
-#     (apps/web-frontend and apps/web-frontend-app), and
+#   - `mdi-*` names referenced in the src/ of apps/skymap-web, and
 #   - Vuetify's internal mdi alias set (checkboxes, menus, ratings, ...),
 #     node_modules/vuetify/lib/iconsets/mdi.js
 # so re-run this after adding icons to components or upgrading Vuetify.
-# One union subset is written into both trees (the app tree's `npm run build`
-# runs this as `prebuild`; it used to write only into apps/web-frontend and the
-# app tree kept shipping a stale copy).
+# The subset is written into apps/skymap-web (this tree's `npm run build`
+# runs this as `prebuild`).
 #
 # Usage: tools/make-mdi-subset.py   (needs fonttools + brotli)
-# Output: apps/web-frontend{,-app}/src/assets/mdi/mdi-subset.woff2 + mdi-subset.css
+# Output: apps/skymap-web/src/assets/mdi/mdi-subset.woff2 + mdi-subset.css
 
 import logging
 import os
@@ -31,10 +29,8 @@ from fontTools import subset
 logging.getLogger("fontTools").setLevel(logging.ERROR)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Both frontend trees; a tree that is absent (e.g. after the standard tree is
-# retired) is simply skipped.
-FRONTS = [d for d in (os.path.join(ROOT, "apps", "web-frontend"),
-                      os.path.join(ROOT, "apps", "web-frontend-app"))
+# The web layer tree.
+FRONTS = [d for d in (os.path.join(ROOT, "apps", "skymap-web"),)
           if os.path.isdir(os.path.join(d, "src"))]
 # node_modules come from whichever tree has them installed (the app tree first:
 # it is the one whose build invokes this script).

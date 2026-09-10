@@ -33,3 +33,9 @@ dist.zip
 # 而打包中途崩掉会留下一个 74MB 的未跟踪文件，`git add -A` 就会把它暂存进来。
 .dist-stage
 dist.zip.tmp
+
+# DSS 清理工具生成的评审页（tools/scan-dss-staircase.py 等），只在开发服务器上看
+staircase-picker
+plate-eq-review
+cast-final-review
+seam-feather-review

@@ -2,7 +2,7 @@
 # Stellarium Web Engine
 #
 # Full-sky streak scan: run tools/clean_dss/streaks.scan_image over every order-3 DSS
-# tile (both polarities) and write apps/web-frontend/public/tile-streaks.json =
+# tile (both polarities) and write apps/skymap-web/public/tile-streaks.json =
 # {npix: {score, dense, ngroups, groups:[{p0,p1,angle,dom,fwhm,fill,score}]}}. The
 # tile-picker reads this to order the scan and to overlay candidate lines. This is a
 # scan aid for the human, NOT an auto-cleaner.
@@ -20,7 +20,7 @@ from tools.clean_dss import streaks
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_SRC = os.path.join(ROOT, "apps", "skydata", "surveys", "dss")
-DEFAULT_OUT = os.path.join(ROOT, "apps", "web-frontend", "public", "tile-streaks.json")
+DEFAULT_OUT = os.path.join(ROOT, "apps", "skymap-web", "public", "tile-streaks.json")
 
 
 def _json_group(g):

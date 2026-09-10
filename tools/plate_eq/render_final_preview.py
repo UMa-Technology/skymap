@@ -3,7 +3,7 @@ import numpy as np, healpy as hp, cv2, os, sys
 sys.path.insert(0,"tools")
 from clean_dss.background import upsample_smooth
 SC=os.environ["SCRATCH"]; W=512; NST=16
-OUT="apps/web-frontend/public/plate-eq-review"
+OUT="apps/skymap-web/public/plate-eq-review"
 d=np.load(SC+"/delta_regions_final.npz"); dR,dG,dB=d['dR'],d['dG'],d['dB']
 def p1(n):
     n=n&0xffff;n=(n|(n<<8))&0x00FF00FF;n=(n|(n<<4))&0x0F0F0F0F

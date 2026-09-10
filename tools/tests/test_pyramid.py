@@ -16,7 +16,7 @@ def test_rebuild_parent_layout():
 
 import os
 from PIL import Image
-ROOT = "apps/web-frontend/public/skydata/surveys/dss"
+ROOT = "apps/skymap-web/public/skydata/surveys/dss"
 
 def _load(o, n):
     return np.asarray(Image.open(f"{ROOT}/Norder{o}/Dir0/Npix{n}.webp").convert("RGB"))

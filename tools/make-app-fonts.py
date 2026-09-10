@@ -18,15 +18,15 @@
 # freetype): TrueType `glyf` outlines only — all sources here are glyf TTFs
 # with unitsPerEm=1000, which is what makes the merge safe.
 #
-# Sources: Alibaba TTFs are NOT downloadable from a stable URL — extract them
-# from dev_docs/AlibabaPuHuiTi-3.zip and dev_docs/AlibabaSans.zip into
-# tools/.fontcache/ if missing. Noto Sans KR is downloaded once if absent.
+# Sources: Alibaba TTFs are NOT downloadable from a stable URL — they are
+# the source TTFs tracked in tools/.fontcache/ (see tools/.fontcache/LICENSES.md).
+# Noto Sans KR is downloaded once if absent.
 #
 # Prereq: run tools/make-sky-i18n.py first (this reads its output catalogs).
 #
 # Usage: tools/make-app-fonts.py
-# Output: apps/web-frontend/public/fonts/SkyFont-Regular.ttf
-#         apps/web-frontend/public/fonts/SkyFont-Bold.ttf
+# Output: apps/skymap-web/public/fonts/SkyFont-Regular.ttf
+#         apps/skymap-web/public/fonts/SkyFont-Bold.ttf
 
 import json
 import os
@@ -40,16 +40,14 @@ from fontTools.varLib import instancer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAT_DIR = os.path.join(ROOT, "apps", "skydata", "sky-i18n")
-# Install into BOTH frontends (standard GUI build + the App-embedded build) so
-# the merged font never drifts between them.
+# Install into the web layer.
 OUT_DIRS = [
-    os.path.join(ROOT, "apps", "web-frontend", "public", "fonts"),
-    os.path.join(ROOT, "apps", "web-frontend-app", "public", "fonts"),
+    os.path.join(ROOT, "apps", "skymap-web", "public", "fonts"),
 ]
 CACHE = os.path.join(ROOT, "tools", ".fontcache")
 
-# A None URL means local-only: the file must already sit in tools/.fontcache/
-# (extracted from the dev_docs zips).
+# A None URL means local-only: it is one of the source TTFs tracked in
+# tools/.fontcache/ (see tools/.fontcache/LICENSES.md).
 SOURCES = {
     "AlibabaSans-Regular.ttf": None,
     "AlibabaSans-Bold.ttf": None,
@@ -80,8 +78,8 @@ def ensure_source(name):
     os.makedirs(CACHE, exist_ok=True)
     url = SOURCES[name]
     if url is None:
-        sys.exit("missing %s — extract it from the dev_docs font zips "
-                 "into tools/.fontcache/" % name)
+        sys.exit("missing %s — it should be one of the source TTFs tracked "
+                 "in tools/.fontcache/ (see tools/.fontcache/LICENSES.md)" % name)
     print("  downloading %s ..." % name)
     urllib.request.urlretrieve(url, path)
     if os.path.getsize(path) < 1_000_000:

@@ -24,7 +24,7 @@
 # Usage:
 #   python tools/feather-seams.py --src apps/skydata/surveys/dss \
 #       --boxes seam-boxes.json --out /tmp/dss-seam \
-#       --report apps/web-frontend/public/seam-feather-review
+#       --report apps/skymap-web/public/seam-feather-review
 import argparse
 import json
 import os

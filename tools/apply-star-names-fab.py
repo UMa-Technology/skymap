@@ -2,7 +2,7 @@
 # Stellarium Web Engine
 #
 # Reconcile the zh star names against the reference list
-# dev_docs/star_names.zh_CN.fab (format: `HIP|_("名字") n`, one star may list
+# apps/skydata/sky-i18n/star_names.zh_CN.fab (format: `HIP|_("名字") n`, one star may list
 # several names — the first is the primary; trailing [宿名]/?/* markers are
 # metadata and stripped).
 #
@@ -29,7 +29,7 @@ import os
 import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FAB = os.path.join(ROOT, "dev_docs", "star_names.zh_CN.fab")
+FAB = os.path.join(ROOT, "apps", "skydata", "sky-i18n", "star_names.zh_CN.fab")
 SKYCULTURE = os.path.join(ROOT, "apps", "skydata", "skycultures", "western",
                           "index.json")
 I18N = os.path.join(ROOT, "apps", "skydata", "sky-i18n")

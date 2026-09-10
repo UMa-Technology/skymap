@@ -1,8 +1,9 @@
 import numpy as np, healpy as hp, os
 from PIL import Image
 TW=512
-RAW="/Users/larry/code/stellarium-web-engine/apps/skydata/surveys/dss"
-CAST="/Users/larry/code/stellarium-web-engine/dss-cast-cleaned"
+ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),"..",".."))
+RAW=os.path.join(ROOT,"apps","skydata","surveys","dss")
+CAST=os.path.join(ROOT,"dss-cast-cleaned")
 
 def tile_path(order,pix):
     c=f"{CAST}/Norder{order}/Dir0/Npix{pix}.webp"

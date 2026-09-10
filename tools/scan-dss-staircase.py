@@ -12,7 +12,7 @@
 #   -> keep only large, elongated connected components
 #   score = sum(component area x mean |step|)
 #
-# Output (default --picker apps/web-frontend/public/staircase-picker):
+# Output (default --picker apps/skymap-web/public/staircase-picker):
 #   candidates.json           ranked [{npix, score}] above --min-score
 #   imgs/NpixN.png            x4-amplified render (raw tiles are near black)
 #   imgs/NpixN_ov.png         detector-overlay render (what/where it flagged)
@@ -116,7 +116,7 @@ def main():
     ap.add_argument("--min-score", type=float, default=1500)
     ap.add_argument("--max-tiles", type=int, default=400)
     ap.add_argument("--picker", default=os.path.join(
-        ROOT, "apps", "web-frontend", "public", "staircase-picker"))
+        ROOT, "apps", "skymap-web", "public", "staircase-picker"))
     args = ap.parse_args()
 
     with ProcessPoolExecutor(max_workers=8) as ex:

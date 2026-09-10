@@ -47,7 +47,7 @@ clean:
 #
 # 这里刻意不写构建依赖：打包和构建是两件事，有时就是要打一份旧快照。
 # 但 dist/ 陈旧时脚本会在 stderr 上大声警告，看到警告再决定要不要先重建：
-#   前端改动  → cd apps/web-frontend-app && npx vite build
+#   前端改动  → cd apps/skymap-web && npx vite build
 #   引擎 C 改动 → ./build-engine.sh（重编 WASM）
 # 两棵树都动过就两个都要跑，只重建前端会得到半套产物。
 .PHONY: dist-zip

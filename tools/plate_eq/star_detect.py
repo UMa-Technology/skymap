@@ -59,7 +59,7 @@ import numpy as np
 from scipy import ndimage
 
 TW = 512
-RAW = "/Users/larry/code/stellarium-web-engine/apps/skydata/surveys/dss"
+RAW = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")), "apps", "skydata", "surveys", "dss")
 PEQ = os.path.dirname(os.path.abspath(__file__))
 
 STAR_DTYPE = np.dtype([

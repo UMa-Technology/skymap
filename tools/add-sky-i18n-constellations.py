@@ -27,7 +27,7 @@
 #
 # Usage:
 #   tools/add-sky-i18n-constellations.py [STELLARIUM_MASTER_DIR]
-# Default STELLARIUM_MASTER_DIR: /Users/larry/code/stellarium-master
+# Default STELLARIUM_MASTER: ../stellarium-master (a sibling checkout of Stellarium)
 
 import importlib.util
 import json
@@ -36,7 +36,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MASTER = sys.argv[1] if len(sys.argv) > 1 else \
-    os.environ.get("STELLARIUM_MASTER", "/Users/larry/code/stellarium-master")
+    os.environ.get("STELLARIUM_MASTER", os.path.join(ROOT, "..", "stellarium-master"))
 # Constellation names live in the `stellarium-skycultures` domain.
 PO_DIR = os.path.join(MASTER, "po", "stellarium-skycultures")
 OUT_DIR = os.path.join(ROOT, "apps", "skydata", "sky-i18n")

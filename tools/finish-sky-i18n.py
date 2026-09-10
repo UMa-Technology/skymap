@@ -23,8 +23,7 @@ import subprocess
 import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
-MASTER = os.environ.get("STELLARIUM_MASTER",
-                        "/Users/larry/code/stellarium-master")
+MASTER = os.environ.get("STELLARIUM_MASTER", os.path.join(TOOLS, "..", "..", "stellarium-master"))
 
 # (script, args, hard, precondition-or-None)
 # hard=True: repo-self-contained, a failure fails the build.
@@ -35,7 +34,7 @@ STEPS = [
     # is dry-run by default — forgetting --apply here once left 2658 names
     # unapplied while the chain looked green.
     ("add-chinese-star-names.py", ["--apply"], False, None),
-    # Reconcile zh star names against the dev_docs/star_names.zh_CN.fab
+    # Reconcile zh star names against the apps/skydata/sky-i18n/star_names.zh_CN.fab
     # reference (the naming authority per product decision). Needs opencc.
     ("apply-star-names-fab.py", [], False, None),
     # Fill zh_cn star names that only exist in zh_tw (hand-curated list).

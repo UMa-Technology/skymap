@@ -4,15 +4,15 @@
 # web frontend, in one command.
 #
 # This is the modern-emscripten path (no Docker, native arm64). It replaces the
-# stale Docker/emsdk-1.39.17 build that used to live in apps/web-frontend/Makefile
-# (removed once this native path took over). See dev_docs/local-build-and-run.md
+# stale Docker/emsdk-1.39.17 build that used to live in the old frontend Makefile
+# (removed once this native path took over). See README.md
 # for the full rationale and the SConstruct migration notes.
 #
 # Usage:
 #   ./build-engine.sh                 # release build
 #   ./build-engine.sh mode=debug      # any extra args are passed to scons
 #
-# Prereqs (see dev_docs/local-build-and-run.md):
+# Prereqs (see README.md):
 #   - emscripten SDK activated (this script sources $EMSDK_ENV, default
 #     ~/emsdk/emsdk_env.sh; override by exporting EMSDK_ENV).
 #   - scons on PATH (brew install scons).
@@ -24,8 +24,8 @@ cd "$REPO_DIR"
 
 ENGINE_JS="build/stellarium-web-engine.js"
 ENGINE_WASM="build/stellarium-web-engine.wasm"
-# 两个前端目录都装：标准 GUI 版 + App 嵌入版（web-frontend-app）
-FRONTEND_JS_DIRS="apps/web-frontend/src/assets/js apps/web-frontend-app/src/assets/js"
+# Install into the web layer (apps/skymap-web).
+FRONTEND_JS_DIRS="apps/skymap-web/src/assets/js"
 
 # 1. Make sure emcc is available; source the emsdk env if not.
 if ! command -v emcc >/dev/null 2>&1; then

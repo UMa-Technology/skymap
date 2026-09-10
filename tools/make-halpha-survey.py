@@ -2,7 +2,7 @@
 """Build the offline Hα sky-survey HiPS from the MDW DR1 star-removed fields.
 
 End-to-end pipeline (proven on the North America / Pelican pilot, fields
-1518+1519); see dev_docs/superpowers/specs/2026-07-16-halpha-survey-layer-design.md
+1518+1519); see the internal design notes
 and the memory note project-halpha-survey-layer.
 
   1. select fields  - from MDW's DR1 CSV manifest (a field list, or an RA/Dec

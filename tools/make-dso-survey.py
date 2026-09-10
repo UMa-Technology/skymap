@@ -42,7 +42,7 @@ SKYDATA = os.path.join(ROOT, "apps", "skydata")
 DSO_DIR = os.path.join(SKYDATA, "dso")
 SKYCULTURE = os.path.join(SKYDATA, "skycultures", "western", "index.json")
 I18N_DIR = os.path.join(SKYDATA, "sky-i18n")
-DEFAULT_INPUT = "/Users/larry/code/objects_catalogs/docs/objects-swe.json"
+DEFAULT_INPUT = os.environ.get("OBJECTS_SWE_JSON", os.path.join(ROOT, "..", "objects_catalogs", "docs", "objects-swe.json"))
 
 ARCMIN2RAD = math.pi / (180.0 * 60.0)
 DEG2RAD = math.pi / 180.0
@@ -298,8 +298,8 @@ def main():
 
     # The App catalog has no LMC (no NGC number), so the survey rebuild just
     # dropped it; re-inject it now rather than trusting anyone to remember.
-    # (This once silently lost the Large Magellanic Cloud, see dev_docs/
-    # dso-data-pipeline.md.)
+    # (This once silently lost the Large Magellanic Cloud, see the internal
+    # design notes.)
     tools = os.path.dirname(__file__)
     subprocess.check_call([sys.executable,
                            os.path.join(tools, "add-lmc-dso.py"), "--apply"])

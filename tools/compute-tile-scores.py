@@ -4,7 +4,7 @@ visual tile-picker (candidates first). The score is a scan aid, NOT a detector: 
 surfaces tiles with strong straight-edge/colour structure (plate blocks AND real
 galaxies/nebulae) so the human eye can confirm blocks and skip the rest.
 
-Writes apps/web-frontend/public/tile-scores.json: {npix: score} for Norder3.
+Writes apps/skymap-web/public/tile-scores.json: {npix: score} for Norder3.
 """
 import json
 import os
@@ -17,8 +17,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from tools.clean_dss.background import coarse_bg
 
-DSS = os.path.join(ROOT, "apps", "web-frontend", "public", "skydata", "surveys", "dss")
-OUT = os.path.join(ROOT, "apps", "web-frontend", "public", "tile-scores.json")
+DSS = os.path.join(ROOT, "apps", "skymap-web", "public", "skydata", "surveys", "dss")
+OUT = os.path.join(ROOT, "apps", "skymap-web", "public", "tile-scores.json")
 
 
 def _robust_poly(z, deg=2, iters=3):

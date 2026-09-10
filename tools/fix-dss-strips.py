@@ -155,7 +155,7 @@ def main():
     ap.add_argument("--annotations", required=True)
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--preview-dir", default=os.path.join(
-        ROOT, "apps", "web-frontend", "public", "staircase-picker", "preview"))
+        ROOT, "apps", "skymap-web", "public", "staircase-picker", "preview"))
     ap.add_argument("--amp", type=float, default=4.0,
                     help="preview brightness multiplier (1 = true display)")
     args = ap.parse_args()

@@ -6,7 +6,7 @@ from clean_dss.background import upsample_smooth
 from scipy.spatial import cKDTree
 
 SC = os.environ["SCRATCH"]; W = 512; NST = 16
-OUT = "apps/web-frontend/public/plate-eq-review"
+OUT = "apps/skymap-web/public/plate-eq-review"
 FIELD = sys.argv[1] if len(sys.argv) > 1 else SC + "/seamnet/dSeam.npz"
 TAGPFX = sys.argv[2] if len(sys.argv) > 2 else "seamnet"
 d = np.load(FIELD)

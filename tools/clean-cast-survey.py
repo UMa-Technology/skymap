@@ -20,7 +20,7 @@
 # Usage:
 #   make -C tools/castclean
 #   python tools/clean-cast-survey.py --src apps/skydata/surveys/dss \
-#       --out /tmp/dss-cast-cleaned --report apps/web-frontend/public/cast-final-review
+#       --out /tmp/dss-cast-cleaned --report apps/skymap-web/public/cast-final-review
 import argparse
 import os
 import re

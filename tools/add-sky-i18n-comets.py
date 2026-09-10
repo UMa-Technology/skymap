@@ -34,9 +34,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 I18N = os.path.join(ROOT, "apps", "skydata", "sky-i18n")
 COMETELS = os.path.join(ROOT, "apps", "skydata", "CometEls.txt")
-SOURCE = os.environ.get(
-    "COMET_NAMES_JSON",
-    "/Users/larry/code/objects_catalogs/names/comet_names.json")
+SOURCE = os.environ.get("COMET_NAMES_JSON", os.path.join(ROOT, "..", "objects_catalogs", "names", "comet_names.json"))
 
 CURATED_LANGS = ("zh_cn", "zh_tw", "ja", "ko", "ru")
 GENERATED_LANGS = ("zh_cn", "zh_tw")

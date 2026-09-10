@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# make-dist-zip.sh —— 从 apps/web-frontend-app/dist/ 生成可复现的 dist.zip。
+# make-dist-zip.sh —— 从 apps/skymap-web/dist/ 生成可复现的 dist.zip。
 #
 # 与直接 `zip -rqX ../dist.zip .` 的两点不同：
 #
@@ -16,12 +16,12 @@
 #    （1980-01-01），再打包。`zip -X` 只去掉 extra field，管不到权限位，详见下面的注释。
 #
 # 用法：
-#   tools/make-dist-zip.sh                    # 默认读 apps/web-frontend-app/dist
+#   tools/make-dist-zip.sh                    # 默认读 apps/skymap-web/dist
 #   tools/make-dist-zip.sh path/to/dist       # 指定目录
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DIST_DIR="${1:-$REPO_DIR/apps/web-frontend-app/dist}"
+DIST_DIR="${1:-$REPO_DIR/apps/skymap-web/dist}"
 OUT_ZIP="$(cd "$(dirname "$DIST_DIR")" && pwd)/dist.zip"
 # 先写到 .tmp 再 mv 就位：mv 是原子的，中途失败不会留下一个截断的 dist.zip
 # 冒充好产物（它照样能算出一个稳定的 sha256），也不会被顺手 commit 进去。
@@ -69,8 +69,8 @@ warn_if_stale() {
   # public/ 也是真构建输入（Vite 的 publicDir 整个拷进 dist/），漏掉它就是漏一类陈旧。
   # 注意 public/skydata 是指向 apps/skydata 的软链接，git 只跟踪这条软链本身——
   # 星表数据自身的改动这里看不到，那是另一棵树，暂不纳入。
-  local specs="apps/web-frontend-app/src|前端源码|npx vite build
-apps/web-frontend-app/public|前端静态资源 fonts/images/favicon|npx vite build
+  local specs="apps/skymap-web/src|前端源码|npx vite build
+apps/skymap-web/public|前端静态资源 fonts/images/favicon|npx vite build
 src|引擎 C 源码|./build-engine.sh（重编 WASM）"
   local lines_n=0 lines="" spec path label how n newest
   local OLD_IFS="$IFS"
@@ -121,7 +121,7 @@ warn_if_stale
 # 排除清单。每条都注明为什么。
 EXCLUDES=(
   # SkyPhotos 对齐的回归夹具，只在开发时从控制台手动贴图用
-  # （见 dev_docs/app-embedding-handoff.md §2.10）。仓库里保留，不进产物。
+  # （见 apps/skymap-web/USAGE.md）。仓库里保留，不进产物。
   "images/m42.jpeg"
   "images/rose.jpeg"
   # 历史遗留：曾经出现过一份与 skydata/landscapes/drakkar/ 目录内容重复的压缩包。
@@ -131,6 +131,11 @@ EXCLUDES=(
   "tile-picker.html"
   "tile-scores.json"
   "tile-streaks.json"
+  # DSS 清理工具在 8080 开发服务器上看的评审页，生成在本树 public/ 下，不进产物
+  "staircase-picker"
+  "plate-eq-review"
+  "cast-final-review"
+  "seam-feather-review"
 )
 
 echo "==> 暂存到 $STAGE_DIR"
