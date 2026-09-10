@@ -1,44 +1,44 @@
-# 更新日志
+# Changelog
 
-## 2026-09-11 分仓
+## 2026-09-11 — Repository split
 
-1. 本仓库从内部 fork 树中独立建立（不带历史），上游合并基 `be43d6436`（2026-05-09），此后不再同步上游。
-2. 退役标准 GUI 树 `apps/web-frontend`；web 层改名 `apps/skymap-web`，工具链只认这一棵树。
-3. 协议握手：`window.SkymapBase`、`initProgress` 消息的 `base` 字段、`dist.zip` 内 `skymap-base.json`、`dist.zip.json` 的 `version`。
-4. GitHub Actions：`main` 构建门；打 `v*` tag 自动构建并把 `dist.zip` 三件发布到 Release。
+1. This repository was created fresh (no history) from the team's internal fork tree. Upstream merge base: `be43d6436` (2026-05-09); upstream is not merged after that point.
+2. Retired the standard-GUI tree `apps/web-frontend`; the web layer is now `apps/skymap-web` and the tooling targets only that tree.
+3. Protocol handshake: `window.SkymapBase`, the `base` field on `initProgress` messages, `skymap-base.json` inside `dist.zip`, and `version` in `dist.zip.json`.
+4. GitHub Actions: a build gate on `main`; pushing a `v*` tag builds and publishes the three `dist.zip` files to a GitHub Release.
 
-## 2026-07-08 ~ 2026-07-15 优化冲刺
+## 2026-07-08 – 2026-07-15 — Optimization sprint
 
-### 离线化与构建
-1. **应用完全离线化**:禁用 NoctuaSky 在线 API、移除卫星模块、彗星数据更新至最新 MPC 轨道根数,修复离线定位崩溃;控制台零报错。
-2. **构建链现代化**:C 引擎迁移至 emscripten 6.0.2(原生 arm64、免 Docker),前端从 vue-cli/webpack4 迁移至 Vite 7 + Node 24(一键 `./build-engine.sh` 重建 WASM)。
+### Offline operation and build
+1. **Fully offline app**: disabled the NoctuaSky online API, removed the satellites module, refreshed comet data to the latest MPC orbital elements, fixed the offline geolocation crash; the console is now error-free.
+2. **Modernized build chain**: the C engine moved to emscripten 6.0.2 (native arm64, no Docker); the frontend moved from vue-cli/webpack 4 to Vite 7 + Node 24 (`./build-engine.sh` rebuilds the WASM in one step).
 
-### 离线 DSS 深空巡天
-3. **内置离线 DSS 彩色巡天**(HiPS order 2–4,Q90 重编码约 68MB):按 FOV 门控与银河层平滑衔接,预取消除层级切换黑闪,补 order-2 兜底层杜绝加载黑块。
-4. **底片瑕疵多轮清理**:卫星/飞机拖线(约 140 瓦片,剖面减除 + 拖线/天体真伪判据)、亮星衍射与环状光晕、水印、瞳孔鬼影逐张修复。
-5. **全天蓝色偏清理**(castclean C 模块):橙=缺蓝版死通道、蓝=通道失衡的统一检测与重合成,覆盖 377 个区域。
-6. **"人工标注 + strip-ramp 渐变填充"通用修复管线**:扫描排序 → 网页标注 → 批量修复 → 金字塔重建全链路工具入库 `tools/`;先后清掉锯齿状底片接缝 46 瓦片、橙色底片色块 51 瓦片(真实纹理颗粒移植,两侧背景逐位置渐变)。
-7. **默认启用"去星 + 接缝清理"版巡天**:星点由引擎按星表实时重绘,画质与标注互不干扰。
+### Offline DSS deep-sky survey
+3. **Built-in offline DSS color survey** (HiPS orders 2–4, re-encoded at Q90, about 68 MB): gated by FOV and blended smoothly with the Milky Way layer; prefetching removes the black flash on level switches; an order-2 fallback layer eliminates black tiles while loading.
+4. **Multi-pass cleanup of plate defects**: satellite/aircraft streaks (about 140 tiles, profile subtraction plus a streak-vs-object discriminator), bright-star diffraction spikes and ring halos, watermarks, and pupil ghosts fixed tile by tile.
+5. **All-sky blue-cast cleanup** (`castclean` C module): unified detection and re-synthesis of orange (missing-blue-plate dead channel) and blue (channel imbalance) casts across 377 regions.
+6. **Generic "manual annotation + strip-ramp fill" repair pipeline**: scan-and-rank → web annotation → batch fix → pyramid rebuild, all tooling in `tools/`; used to clear 46 tiles with staircase plate seams and 51 tiles with orange plate patches (real texture grain transplanted, background ramped per position on both sides).
+7. **"Starless + seam-cleaned" survey enabled by default**: stars are redrawn live by the engine from the catalog, so image quality and labels no longer interfere.
 
-### 性能与手机发热
-8. **发热优化第一轮**:页面隐藏暂停渲染、60/10fps 自适应帧率、高 DPR 屏关闭 MSAA、内部渲染分辨率封顶 2×DPR(DPR-3 手机少 2.25 倍着色像素)。
-9. **发热优化第二轮**:修复"选中天体即永远 60fps"的节流失效缺陷(锁定跟踪每帧微动骗过检测);改为累计像素运动模型 + 三档帧率——交互/可见运动 60fps、引擎动画 10fps、静态天空最低 3 秒 1 帧;宿主 App 的 API 调用即时唤醒渲染循环;取消选中同时解除目标跟踪锁定。
-10. **大气模型缓存与夜间跳绘**:Preetham/天光亮度模型按日月位置缓存(实时速度下数十秒才重算),夜间整个满屏大气通道低于半个色阶时直接跳过,曝光自适应簿记不受影响。
+### Performance and phone heat
+8. **Thermal optimization, round one**: rendering pauses when the page is hidden; adaptive 60/10 fps; MSAA off on high-DPR screens; internal render resolution capped at 2×DPR (2.25× fewer shaded pixels on DPR-3 phones).
+9. **Thermal optimization, round two**: fixed the throttling defect where selecting an object pinned 60 fps forever (locked tracking jittered every frame and fooled the motion check); replaced with an accumulated-pixel-motion model and three tiers — 60 fps for interaction/visible motion, 10 fps for engine animations, and one frame per 3 s minimum for a static sky; host-app API calls wake the render loop immediately; deselecting also releases the tracking lock.
+10. **Atmosphere model cache and night-time skip**: the Preetham/sky-brightness model is cached by Sun and Moon position (recomputed only every few tens of seconds at real-time speed); at night, when the whole full-screen atmosphere pass stays under half a color step, it is skipped entirely, with exposure-adaptation bookkeeping unaffected.
 
-### 渲染与引擎
-11. **星场独立曝光**(`star_exposure_scale`)与星点大小对比度压缩:高亮度屏幕上亮星不再刺眼、星等层次更自然。
-12. **太阳改为相机朝向 billboard**:保留日珥细节,显示效果与日期无关。
-13. **新增自定义地平线模块**(`custom_horizon`):渲染宿主 App 下发的遮挡轮廓(半透明填充 + 脊线),任意 FOV 无投影伪影。
-14. **地平线雾带平滑**:衰减改逐像素计算并加抖动,消除放大后的梯度分层。
+### Rendering and engine
+11. **Independent star-field exposure** (`star_exposure_scale`) and star-size contrast compression: bright stars no longer glare on high-brightness screens, and the magnitude hierarchy looks more natural.
+12. **Sun rendered as a camera-facing billboard**: keeps prominence detail and looks the same on any date.
+13. **New custom-horizon module** (`custom_horizon`): renders an occlusion profile supplied by the host app (translucent fill plus a ridge line) without projection artifacts at any FOV.
+14. **Smoother horizon fog band**: attenuation is now computed per pixel with dithering, removing the gradient banding visible when zoomed in.
 
-### 深空天体与目录
-15. **DSO 数据源整体替换**为 App 实际目录(objects_catalogs):暗星云(LDN/Barnard)以"尺寸+透明度"方案渲染(此前不可见),标注椭圆补回位置角、方向正确,重复专名标签去重。
-16. **专业目录单选叠加**(LDN/LBN/SH2/PK/ACO/B):默认全关、选中单显,按目录亮度补偿 + 暗星云按角尺寸分级渐显,复用普通 DSO 的 FOV 渐显规则。
+### Deep-sky objects and catalogs
+15. **DSO data source replaced wholesale** by the app's real catalog (objects_catalogs): dark nebulae (LDN/Barnard) rendered with a size-plus-opacity scheme (previously invisible), label ellipses regained their position angle and orientation, duplicate proper-name labels de-duplicated.
+16. **Single-select professional catalog overlays** (LDN/LBN/SH2/PK/ACO/B): all off by default, one shown when selected; per-catalog brightness compensation, dark nebulae fade in by angular size, reusing the regular DSO FOV fade rules.
 
-### 多语言与星空文化
-17. **星座名多语言真正生效**:引擎新增 `sys_set_lang` 接线(此前前端从未把语言传入引擎,星座名恒为拉丁文)+ skycultures 翻译域数据补齐,支持运行时切换。
-18. **中文星官名全量补齐 2658 颗**(以中国星官体系为准,拜耳/Flamsteed 编号作其他语言回退,简繁双版)+ CJK 子集字体重建 + 名称尾部标记/拉丁污染清洗。
-19. **星座选中聚焦交互**:选中后连线/名称/神话插画渐显、其余渐隐;共享插画星座(船帆/船尾/巨蛇)选中不再消失;5 张插画修复灰底发光问题。
+### Languages and sky cultures
+17. **Constellation names actually translate**: the engine gained a `sys_set_lang` hook (the frontend had never passed the language to the engine, so constellation names were always Latin) plus the missing skycultures translation domain; switchable at runtime.
+18. **Chinese star names completed for all 2,658 stars** (following the Chinese asterism system, with Bayer/Flamsteed designations as the fallback for other languages, in Simplified and Traditional) plus a rebuilt CJK subset font and cleanup of trailing markers and Latin contamination in names.
+19. **Constellation selection focus**: on selection the lines, name and mythological artwork fade in while everything else fades out; constellations sharing artwork (Vela/Puppis/Serpens) no longer disappear when selected; five artworks fixed for a gray glowing background.
 
-### 界面
-20. **设置与工具栏完善**:恒星显隐开关、赤道线与 J2000 赤道网格入设置;参考线重新配色(子午线蓝 / 黄道绿 / 赤道橙)、加粗 1.5 倍且不透明;目录下拉改不透明底;语言选择器精简为母语名并右对齐。
+### User interface
+20. **Settings and toolbar polish**: star visibility toggle, equator line and J2000 equatorial grid added to settings; reference lines recolored (meridian blue / ecliptic green / equator orange), 1.5× thicker and opaque; catalog dropdown given an opaque background; the language picker trimmed to native names and right-aligned.

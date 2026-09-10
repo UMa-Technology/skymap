@@ -2,7 +2,7 @@ import pluginVue from 'eslint-plugin-vue'
 import globals from 'globals'
 
 // ESLint 9 flat config (replaces the old vue-cli eslintConfig).
-// Vue 2.7 project -> use eslint-plugin-vue's vue2 flat presets.
+// Vue 3.5 project -> eslint-plugin-vue's Vue 3 flat preset.
 export default [
   {
     ignores: [
@@ -11,7 +11,7 @@ export default [
       'src/assets/js/**' // generated emscripten glue
     ]
   },
-  ...pluginVue.configs['flat/vue2-recommended'],
+  ...pluginVue.configs['flat/recommended'],
   {
     languageOptions: {
       ecmaVersion: 2022,

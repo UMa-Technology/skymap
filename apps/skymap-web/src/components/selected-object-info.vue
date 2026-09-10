@@ -43,13 +43,13 @@
     </v-card-actions>
     <div v-if="$store.state.showSelectedInfoButtons" style="position: absolute; right: 0px; bottom: -50px;">
       <v-btn v-if="showPointToButton" icon size="small" variant="text" v-on:click="lockToSelection()">
-        <img src="@/assets/images/svg/ui/point_to.svg" height="40px" style="min-height: 40px"></img>
+        <img src="@/assets/images/svg/ui/point_to.svg" height="40px" style="min-height: 40px"/>
       </v-btn>
       <v-btn v-if="!showPointToButton" icon size="small" variant="text" @mousedown="zoomOutButtonClicked()">
-        <img :class="{bt_disabled: !zoomOutButtonEnabled}" src="@/assets/images/svg/ui/remove_circle_outline.svg" height="40px" style="min-height: 40px"></img>
+        <img :class="{bt_disabled: !zoomOutButtonEnabled}" src="@/assets/images/svg/ui/remove_circle_outline.svg" height="40px" style="min-height: 40px"/>
       </v-btn>
       <v-btn v-if="!showPointToButton" icon size="small" variant="text" @mousedown="zoomInButtonClicked()">
-        <img :class="{bt_disabled: !zoomInButtonEnabled}" src="@/assets/images/svg/ui/add_circle_outline.svg" height="40px" style="min-height: 40px"></img>
+        <img :class="{bt_disabled: !zoomInButtonEnabled}" src="@/assets/images/svg/ui/add_circle_outline.svg" height="40px" style="min-height: 40px"/>
       </v-btn>
     </div>
   </v-card>
