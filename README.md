@@ -108,5 +108,9 @@ Data attribution:
 
 - DSS colored survey: Digitized Sky Survey, STScI/NASA; colored and
   HEALPix-tiled by CDS (`apps/skydata/surveys/dss/properties`).
-- Moon texture by Oleg Pluton (CC BY 4.0); Sun texture from Stellarium.
+- Moon texture by Oleg Pluton (CC BY 4.0); Sun texture from Sky-Watcher.
 - Fonts: see `tools/.fontcache/LICENSES.md`.
+
+## Thanks
+
+- [@氕氘氚Star](https://github.com/LHF-CN/)
