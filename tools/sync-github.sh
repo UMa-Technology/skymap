@@ -12,7 +12,7 @@ TARGET="${1:-origin/main}"
 git merge-base --is-ancestor "$TARGET" origin/main || { echo "错误：$TARGET 不在 origin/main 历史上" >&2; exit 2; }
 OLD=$(git rev-parse --short github 2>/dev/null || echo '(无)')
 echo "==> github: $OLD → $(git rev-parse --short "$TARGET")"
-[ "$OLD" = '(无)' ] || git log --oneline "github..$TARGET" | head -50
+[ "$OLD" = '(无)' ] || git log --oneline -50 "github..$TARGET"
 git branch -f github "$TARGET"
 git push -q origin github
 git push github github:main
