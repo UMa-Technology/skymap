@@ -20,6 +20,7 @@ for the full setup and rationale.
 
 # 2. Install frontend dependencies and run the dev GUI
 #    (http://localhost:8080, with hot-reload).
+#    Add ?webgui=1 (http://localhost:8080/?webgui=1) for the full web GUI — development only.
 npm install
 npm run dev
 

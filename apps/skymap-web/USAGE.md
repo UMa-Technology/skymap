@@ -125,6 +125,8 @@ reason?}`（`reason` 仅 `error` 时出现，当前唯一值 `wasm-unsupported`�
 `postMessage`/`StellariumActions` 事件没有队列缓冲会直接丢失，只有 URL 能保证首帧渲染
 前生效。
 
+- `webgui=1`：只给开发用，挂上完整 web GUI；宿主不要传。
+
 #### 6. 为什么必须经 HTTP 服务加载、`file://` 不行
 
 入口脚本是 `<script type="module" crossorigin>`，`file://` 页面 origin 为 `null`，会被

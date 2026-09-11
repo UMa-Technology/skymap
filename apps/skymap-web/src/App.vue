@@ -28,8 +28,10 @@
 
 import Gui from '@/components/gui.vue'
 import GuiLoader from '@/components/gui-loader.vue'
+import WebGui from '@/components/webgui.vue'
 import swh from '@/assets/sw_helpers.js'
 import jsbridge from '@/utils/jsbridge'
+import { wantsWebGui } from '@/utils/webgui.js'
 import Moment from 'moment'
 
 export default {
@@ -41,7 +43,7 @@ export default {
       dataSourceInitDone: false
     }
   },
-  components: { Gui, GuiLoader },
+  components: { Gui, GuiLoader, WebGui },
   methods: {
     setStateFromQueryArgs: function () {
       // Set the core's state from URL query arguments such
@@ -206,7 +208,8 @@ export default {
           that.$stel.core.stars.hints_mag_offset = 1.5
 
           that.setStateFromQueryArgs()
-          that.guiComponent = 'Gui'
+          // ?webgui=1: development GUI; hosts get the bare overlay.
+          that.guiComponent = wantsWebGui(window.location.search) ? 'WebGui' : 'Gui'
 
           // AR 模式：拖动星图（超过阈值）即退出 AR 跟随
           const canvas = that.$refs.stelCanvas

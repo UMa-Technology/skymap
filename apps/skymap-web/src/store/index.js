@@ -36,7 +36,16 @@ export default createStore({
     // (Was hidden for a while; restored 2026-07-16 per product review.)
     showSelectedInfo: true,
     showFPS: false,
+    // Bottom-bar per-button visibility. Default true (shown) to match the
+    // `!== false` guard bottom-bar.vue uses for each of them.
+    showConstellationsLinesButton: true,
+    showConstellationsArtButton: true,
+    showAtmosphereButton: true,
+    showLandscapeButton: true,
+    showAzimuthalGridButton: true,
+    showEquatorialGridButton: true,
     showEquatorialJ2000GridButton: false,
+    showNightmodeButton: true,
 
     fullscreen: false,
     nightmode: false,
