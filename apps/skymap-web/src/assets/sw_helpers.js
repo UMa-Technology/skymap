@@ -494,13 +494,6 @@ const swh = {
     return obj
   },
 
-  // Offline-only build: name search is a no-op (no online skysource API).
-  // Kept so <skysource-search> resolves cleanly; object selection resolves
-  // from local engine data via sweObj2SkySource below.
-  querySkySources: function () {
-    return Promise.resolve([])
-  },
-
   sweObj2SkySource: function (obj) {
     // Offline-only build: build the SkySource straight from local engine data.
     // No NoctuaSky network lookup.
