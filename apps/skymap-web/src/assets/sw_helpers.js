@@ -15,6 +15,11 @@ import { installSatellites } from './satellites.js'
 import { installSkyPhotos } from './sky-photos.js'
 import { installSkyAr } from './sky-ar.js'
 import { skymapBase } from '@/protocol'
+import {
+  NON_OBJECT_KEYS, SATELLITE_SEARCH_ENTRIES, isResolvableKey,
+  buildSkyCatalogReverse, buildCommonNameReverse, buildSearchEntries,
+  rankSuggestions, designationForms
+} from './sky-search.js'
 
 var DDDate = Date
 DDDate.prototype.getJD = function () {
@@ -45,6 +50,26 @@ let skyCatalog = {}
 let stelInstance = null
 let skyHintsLayer = null            // engine layer for the circumpolar mask (module-scope read)
 const skyCatalogCache = {}          // lang -> catalog object (memoized fetch)
+// Cross-language search state. The pure index/ranking logic lives in
+// sky-search.js (unit-tested); this file owns the I/O and the engine calls.
+// skyCatalogReverse: reverse of the ACTIVE catalog, rebuilt on every language
+// switch, so a name typed in the current sky language resolves back to its
+// English source. englishNames: the catalog keys, kept across a switch to
+// English so search still has an index when no localized catalog is loaded.
+let skyCatalogReverse = {}
+let englishNames = []
+// English proper name (lowercased) -> catalog designation, from the western
+// skyculture common_names.
+let commonNameToDesignation = {}
+// Every shipped catalog, so search works in any language regardless of the
+// display language (type 仙女 while the map is in English). searchEntries is
+// null until the index is built; searchSkySuggestions falls back to the active
+// catalog until then.
+const SEARCH_LANGS = ['zh_cn', 'zh_tw', 'ja', 'ko', 'ru', 'de', 'fr', 'es',
+  'it', 'pl', 'ro']
+let searchEntries = null
+let searchIndexPromise = null
+
 // No per-language font loading here anymore: App.vue loads the merged
 // SkyFont-Regular/Bold (latin + CJK + Hangul, tools/make-app-fonts.py) once.
 
@@ -159,6 +184,11 @@ const swh = {
     // also poke the render loop so the on-demand renderer repaints with the new
     // labels immediately instead of waiting for the next idle safety frame.
     const apply = function () {
+      skyCatalogReverse = buildSkyCatalogReverse(skyCatalog)
+      // Keep the English name list from the last loaded catalog (the keys are
+      // language-independent), so search still has an index in English mode.
+      const keys = Object.keys(skyCatalog)
+      if (keys.length) englishNames = keys
       if (!stelInstance) return
       stelInstance.ccall('sys_set_lang', null, ['string'], [lang])
       if (stelInstance._apiActivity) stelInstance._apiActivity()
@@ -184,6 +214,95 @@ const swh = {
     ERFA_DJY: 365.25,
     // Astronomical unit in m
     ERFA_DAU: 149597870000
+  },
+
+  // Resolve a searched name to an engine object. core_search matches
+  // designations by case-insensitive exact string ('Vega', 'NAME ISS',
+  // 'M 31'), so try every form designationForms() produces; if the raw text
+  // doesn't hit, map it from the active sky language back to its English
+  // source via the reverse catalog and retry (so '水委一' / '仙女座星系'
+  // resolve), and from an English proper name to its catalog designation
+  // (so 'Andromeda Galaxy' -> 'M 31').
+  searchSkyObject: function (query) {
+    const q = (query || '').trim()
+    if (!q || !stelInstance) return null
+    const tryForms = function (base) {
+      const forms = designationForms(base)
+      for (let i = 0; i < forms.length; i++) {
+        const o = stelInstance.getObj(forms[i])
+        if (o) return o
+      }
+      return null
+    }
+    const resolveName = function (name) {
+      let o = tryForms(name)
+      if (o) return o
+      const desig = commonNameToDesignation[name.toLowerCase()]
+      if (desig) o = tryForms(desig)
+      return o
+    }
+    // 1. Direct designation / English name.
+    let obj = resolveName(q)
+    if (obj) return obj
+    // 2. Localized name -> English source -> designation.
+    const key = skyCatalogReverse[q.toLowerCase()]
+    if (key) obj = resolveName(key)
+    return obj
+  },
+
+  // Load every shipped catalog once and build the cross-language search index.
+  // Safe to call repeatedly (memoized); called when the search box is focused.
+  ensureSearchIndex: function () {
+    if (searchIndexPromise) return searchIndexPromise
+    const base = process.env.BASE_URL
+    const catsP = Promise.all(SEARCH_LANGS.map(function (lang) {
+      if (skyCatalogCache[lang]) return Promise.resolve(skyCatalogCache[lang])
+      return fetch(base + 'skydata/sky-i18n/' + lang + '.json')
+        .then(function (r) { return r.ok ? r.json() : {} })
+        .then(function (cat) { skyCatalogCache[lang] = cat; return cat })
+        .catch(function () { return {} })
+    }))
+    const cnP = fetch(base + 'skydata/skycultures/western/index.json')
+      .then(function (r) { return r.ok ? r.json() : {} })
+      .then(function (d) { return d.common_names || {} })
+      .catch(function () { return {} })
+    searchIndexPromise = Promise.all([catsP, cnP]).then(function (res) {
+      commonNameToDesignation = buildCommonNameReverse(res[1])
+      searchEntries = buildSearchEntries(res[0], commonNameToDesignation)
+        .concat(SATELLITE_SEARCH_ENTRIES)
+    })
+    return searchIndexPromise
+  },
+
+  // Live search suggestions for the search box. Matches the typed text against
+  // EVERY language's names (via the cross-language index) plus the English
+  // source keys and the catalog designations, so 'and' / '仙女' /
+  // 'アンドロメダ' / 'M31' all surface Andromeda. Returns [{label, key}] with
+  // prefix matches first; `label` is shown (in the current display language),
+  // `key` resolves via searchSkyObject on click.
+  searchSkySuggestions: function (query, limit) {
+    // Display label for an English name: the current display language, else
+    // the English name itself.
+    const labelFor = function (en) {
+      const v = skyCatalog[en]
+      return (typeof v === 'string') ? v : en
+    }
+    if (searchEntries) return rankSuggestions(searchEntries, query, limit, labelFor)
+    // Before the cross-language index has loaded (the box was typed into
+    // within a few hundred ms of being focused): rank the active catalog
+    // instead, so the box is never dead. Same resolvability filter, so no
+    // un-selectable stellarium nicknames leak through.
+    const keys = Object.keys(skyCatalog).length ? Object.keys(skyCatalog) : englishNames
+    const live = []
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      if (NON_OBJECT_KEYS.has(key) ||
+          !isResolvableKey(key, commonNameToDesignation)) continue
+      const v = skyCatalog[key]
+      if (typeof v === 'string') live.push({ key: key, t: v.toLowerCase() })
+      live.push({ key: key, t: key.toLowerCase() })
+    }
+    return rankSuggestions(live, query, limit, labelFor)
   },
 
   iconForSkySourceTypes: function (skySourceTypes) {

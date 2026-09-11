@@ -16,6 +16,9 @@
         <div style="color: rgba(255,255,255,0.5); font-size: 10px; letter-spacing: 1px; margin-top: 4px;">FOV</div>
       </div>
       <v-spacer></v-spacer>
+      <!-- Offline cross-language object search (index built from the shipped
+           sky-i18n catalogs; see sw_helpers ensureSearchIndex). -->
+      <target-search style="width:160px; max-width:160px; flex:0 0 auto; margin-right:12px;"></target-search>
       <!-- FPS (dev diagnostic, off by default); FOV moved to the top-left HUD -->
       <div v-if="$store.state.showFPS" class="subheader text-grey pr-2" style="user-select: none;">FPS {{ $store.state.stel ? $store.state.stel.fps.toFixed(1) : '?' }}</div>
       <!-- 4: language selector (lat/lon moved into the Settings popover) -->
@@ -38,9 +41,10 @@
 
 import swh from '@/assets/sw_helpers.js'
 import ViewSettingsDialog from '@/components/view-settings-dialog.vue'
+import TargetSearch from '@/components/target-search.vue'
 
 export default {
-  components: { ViewSettingsDialog },
+  components: { ViewSettingsDialog, TargetSearch },
   data: function () {
     return {
       skyLang: 'en',
