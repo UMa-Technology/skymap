@@ -7,7 +7,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 TAG="${1:-}"; PUSH=true
-[ "${2:-}" = "--no-push" ] && PUSH=false
+case "${2:-}" in "") ;; --no-push) PUSH=false ;; *) echo "用法：tools/release.sh vX.Y.Z [--no-push]" >&2; exit 2 ;; esac
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "用法：tools/release.sh vX.Y.Z [--no-push]" >&2; exit 2; }
 [ "$(git branch --show-current)" = main ] || { echo "错误：请在 main 上发版（当前 $(git branch --show-current)）" >&2; exit 2; }
 [ -z "$(git status --porcelain)" ] || { echo "错误：工作树不干净" >&2; exit 2; }
@@ -15,10 +15,11 @@ for t in "$TAG" "dist/$TAG"; do
   git rev-parse -q --verify "refs/tags/$t" >/dev/null && { echo "错误：tag $t 已存在" >&2; exit 2; }
 done
 command -v git-lfs >/dev/null || { echo "错误：需要 git-lfs（brew install git-lfs && git lfs install）" >&2; exit 2; }
+[ "$(git config --get filter.lfs.clean)" = "git-lfs clean -- %f" ] || { echo "错误：git-lfs 过滤器未配置（git lfs install）" >&2; exit 2; }
 WEB="$REPO_DIR/apps/skymap-web"
 
 echo "==> 构建 web 层（SKYMAP_VERSION=$TAG）"
-( cd "$WEB" && npm ci >/dev/null 2>&1 && SKYMAP_VERSION="$TAG" npm run build >/dev/null 2>&1 )
+( cd "$WEB" && npm ci >/dev/null && SKYMAP_VERSION="$TAG" npm run build >/dev/null )
 
 echo "==> 自检"
 ( cd "$WEB" && shasum -a 256 -c dist.zip.sha256 >/dev/null )
@@ -38,7 +39,8 @@ rmdir "$WT"
 if git rev-parse -q --verify refs/heads/dist >/dev/null; then
   git worktree add -q "$WT" dist
 elif git ls-remote --exit-code --heads origin dist >/dev/null 2>&1; then
-  git fetch -q origin dist && git worktree add -q -b dist "$WT" origin/dist
+  git fetch -q origin dist
+  git worktree add -q -b dist "$WT" origin/dist
 else
   git worktree add -q --orphan -b dist "$WT"
 fi
@@ -60,9 +62,9 @@ X
 git worktree remove --force "$WT"
 
 if $PUSH; then
+  git push -q --atomic origin dist "dist/$TAG"
   git push -q origin "$TAG"
-  git push -q origin dist "dist/$TAG"
-  echo "==> 已推 origin：$TAG、dist、dist/$TAG"
+  echo "==> 已推 origin：dist、dist/$TAG、$TAG"
 else
   echo "==> --no-push：本地已有 tag $TAG、分支 dist、tag dist/$TAG（未推送）"
 fi
