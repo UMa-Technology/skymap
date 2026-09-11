@@ -5,7 +5,7 @@
 1. This repository was created fresh (no history) from the team's internal fork tree. Upstream merge base: `be43d6436` (2026-05-09); upstream is not merged after that point.
 2. Retired the standard-GUI tree `apps/web-frontend`; the web layer is now `apps/skymap-web` and the tooling targets only that tree.
 3. Protocol handshake: `window.SkymapBase`, the `base` field on `initProgress` messages, `skymap-base.json` inside `dist.zip`, and `version` in `dist.zip.json`.
-4. GitHub Actions: a build gate on `main`; pushing a `v*` tag builds and publishes the three `dist.zip` files to a GitHub Release.
+4. Releases: `tools/release.sh vX.Y.Z` tags the commit and publishes the three `dist.zip` files on the orphan `dist` branch (git-lfs); on the GitHub mirror a `v*` tag also produces a GitHub Release via Actions. `tools/sync-github.sh` mirrors `main` to GitHub on demand.
 
 ## 2026-07-08 – 2026-07-15 — Optimization sprint
 

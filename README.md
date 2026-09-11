@@ -8,8 +8,8 @@ sky data (stars, deep-sky objects, DSS survey, landscapes, translations).
 
 This repository is the **base**: engine, web layer, data and build tools.
 Host applications (Flutter apps, native WebViews) consume the single build
-artifact `dist.zip` published on the Releases page; they are not part of this
-repository.
+artifact `dist.zip` published on the orphan `dist` branch; they are not part
+of this repository.
 
 ## Repository layout
 
@@ -20,10 +20,16 @@ repository.
 | `apps/skymap-web/` | The web layer (Vite + Vue 3). `USAGE.md` documents the JS bridge |
 | `apps/skydata/` | Sky data served by the web layer (`apps/skymap-web/public/skydata` is a symlink to it) |
 | `tools/` | Data pipelines (catalogs, translations, fonts, survey cleaning) and `make-dist-zip.sh` |
+| `tools/release.sh` | Tags a release and publishes `dist.zip` on the orphan `dist` branch (git-lfs) |
+| `tools/sync-github.sh` | Fast-forwards the `github` branch and pushes it to the GitHub mirror |
 | `.github/workflows/` | CI build gate; tag-triggered release of `dist.zip` |
 
 `dev_docs/` and `docs/` are ignored: internal notes live in a private
 repository and are symlinked in on developer machines.
+
+Branches: `develop` (daily work) → `main` (stable) → `github` (the snapshot mirrored to
+GitHub `main` by `tools/sync-github.sh`). The orphan `dist` branch holds only release
+artifacts.
 
 ## Build the engine
 
@@ -68,10 +74,13 @@ in `tools/requirements-clean-dss.txt` (Python 3.11) and is not run in CI.
 
 ## Releases and the handshake
 
-Pushing a tag `vX.Y.Z` builds the engine and the web layer on GitHub Actions
-and attaches `dist.zip`, `dist.zip.sha256` and `dist.zip.json` to a GitHub
-Release. That Release is the only supported source of `dist.zip` for host
-applications.
+`tools/release.sh vX.Y.Z` (run on a clean `main`) builds the web layer with the version
+baked in, tags the commit `vX.Y.Z`, and commits `dist.zip`, `dist.zip.sha256` and
+`dist.zip.json` to the orphan `dist` branch (git-lfs) tagged `dist/vX.Y.Z`. Host
+applications fetch a release with `git clone --depth 1 --branch dist/vX.Y.Z` (their
+`bin/skymap_dist.py` does this and verifies the SHA-256); they never build the web layer
+themselves. On the GitHub mirror, pushing a `v*` tag additionally attaches the same three
+files to a GitHub Release (`.github/workflows/release.yml`).
 
 Every build embeds its identity:
 
