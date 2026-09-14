@@ -1,5 +1,7 @@
 # SkyMap
 
+English | [简体中文](README.zh-CN.md)
+
 SkyMap is an offline, embeddable star-map web layer built on a fork of
 [Stellarium Web Engine](https://github.com/Stellarium/stellarium-web-engine):
 a C planetarium engine compiled to WebAssembly, driven by a Vue 3 page that
@@ -109,6 +111,7 @@ Data attribution:
 - DSS colored survey: Digitized Sky Survey, STScI/NASA; colored and
   HEALPix-tiled by CDS (`apps/skydata/surveys/dss/properties`).
 - Moon texture by Oleg Pluton (CC BY 4.0); Sun texture from Sky-Watcher.
+- Sky cultures: Western from [@氕氘氚Star](https://github.com/LHF-CN/).
 - Fonts: see `tools/.fontcache/LICENSES.md`.
 
 ## Thanks
