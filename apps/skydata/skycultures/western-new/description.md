@@ -1,4 +1,4 @@
-# Western - new
+# Western
 
 ## Introduction
 

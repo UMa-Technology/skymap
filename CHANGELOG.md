@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-14 — v1.1.0
+
+1. **Deep-sky annotation shapes dimmed to 50%.** The unselected hint alpha in `dso_hint_color` went from 0.7 to 0.5, so circles, ellipses and boxes recede into the sky. Names are unaffected: `dso_render_label` overrides the alpha to 0.95 for unselected labels, and a selected object keeps a fully opaque marker.
+2. **New bridge action `toggleStarLabels(visible)`.** Hides the star name labels (Bayer / Flamsteed / proper names) without hiding the stars themselves, for a clean naked-sky view; constellation and deep-sky names are unaffected. The selected star keeps its label so the selection stays identifiable. The engine property it drives (`stars.hints_visible`) already existed; `getState` now reports it under the same key.
+3. **New bridge action `setSkyCulture(key)`** switches the sky culture at runtime (constellation lines, artwork and cultural names) without reloading the page, alongside the existing `?sc=` URL seed. `getState` reports the active key as `skyCulture`. Keys are restricted to `[A-Za-z0-9_-]` because they are interpolated into a URL.
+4. **New sky culture `western-new`**: the same constellation lines and common names as `western`, with a new set of 85 illustrations. Its `index.json` carries `"id": "western-new"` to match the data-source key, as the engine requires; the constellation ids stay `CON western …`, which is safe because switching cultures clears every constellation object before rebuilding.
+5. Corrected the `western` sky culture credit: its illustrations are by 氕氘氚Star, not the upstream author named in the inherited description.
+
+## 2026-09-11 — v1.0.1
+
+1. **Restored the offline cross-language object search** lost in the repository split. The index is built from the eleven shipped `sky-i18n` catalogs plus the English source keys and the western `common_names`, so a name typed in any language resolves regardless of the display language, and catalog designations (`M31`, `NGC 224`, `HIP 91262`) resolve through a normalizing lookup. The pure index and ranking logic lives in `apps/skymap-web/src/assets/sky-search.js` with unit tests; `skysource-search.vue` and the dead `querySkySources` stub were removed.
+
 ## 2026-09-11 — Repository split
 
 1. This repository was created fresh (no history) from the team's internal fork tree. Upstream merge base: `be43d6436` (2026-05-09); upstream is not merged after that point.

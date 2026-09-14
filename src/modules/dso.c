@@ -572,11 +572,15 @@ static bool dso_get_short_name(const dso_t *s, char *out, int size,
 
 
 // DSO marker/label colour for the current mode. Night mode uses #FF6C20,
-// otherwise #3C83FF. Unselected 70% alpha, selected 100%, times the caller's
+// otherwise #3C83FF. Unselected 50% alpha, selected 100%, times the caller's
 // fade opacity (1.0 for labels, a smoothstep for symbols).
+//
+// The 50% applies to the SHAPE only: dso_render_label overrides the alpha to
+// 0.95 for unselected labels (see the comment there), so the names keep the
+// weight they had while the circles/ellipses/boxes recede into the sky.
 static void dso_hint_color(bool selected, double opacity, double c[4])
 {
-    const double alpha = (selected ? 1.0 : 0.7) * opacity;
+    const double alpha = (selected ? 1.0 : 0.5) * opacity;
     // Night mode whitens every marker (the #FF6C20 multiply overlay turns white
     // into #FF6C20; drawing #FF6C20 here would be doubled into a dark red), and
     // a selected marker uses the shared selection colour — both are exactly what
@@ -605,10 +609,10 @@ static void dso_render_label(const dso_t *s,
         effects &= ~TEXT_FLOAT;
     dso_hint_color(selected, 1.0, color);
     // The name carries a dark halo (render_gl) for legibility over the bright
-    // Milky Way / DSS. At the hint's 0.7 alpha that halo bled through the
+    // Milky Way / DSS. At the hint's alpha that halo bled through the
     // semi-transparent glyphs and left the blue looking dark / undersaturated;
-    // draw the label near-opaque so the colour stays vivid. The hint circle
-    // keeps its 0.7 alpha; selected labels (orange, already 1.0) are unchanged.
+    // draw the label near-opaque so the colour stays vivid. The hint shape
+    // keeps its 0.5 alpha; selected labels (orange, already 1.0) are unchanged.
     if (!selected)
         color[3] = 0.95;
     radius = fmin(win_size[0] / 2, win_size[1] / 2) +

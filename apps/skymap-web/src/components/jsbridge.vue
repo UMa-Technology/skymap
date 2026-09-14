@@ -178,6 +178,7 @@ export default {
           toggleLandscape: this.$store.state.stel.landscapes.visible,
           toogleMilkyway: this.$store.state.stel.milkyway.visible,
           toggleStars: this.$store.state.stel.stars.visible,
+          toggleStarLabels: this.$store.state.stel.stars.hints_visible,
           // 空间站（ISS/天宫）显隐
           toggleSatellites: this.$store.state.stel.satellites ? this.$store.state.stel.satellites.visible : false,
           toggleEquatorLine: this.$store.state.stel.lines.equator_line.visible,
@@ -203,6 +204,8 @@ export default {
           enableArMode: this.$store.state.appEnableARMode,
           currentLocation: this.getCenterRaDecValue(),
           direction: ((this.$stel.core.observer.yaw * 180 / Math.PI) % 360 + 360) % 360,
+          // 当前星空文化的 key（引擎的 current_id）
+          skyCulture: this.$stel.core.skycultures.current_id,
           drawSelectedTargetLine: this.linesObj != null,
           ...this.$refs.framing.stateFields()
         }
@@ -224,6 +227,32 @@ export default {
         // 恒星
         toggleStars: (visible) => {
           this.$stel.core.stars.visible = visible
+          this.updateState()
+        },
+        // 恒星名字（拜耳 / 弗兰斯蒂德 / 专名）显隐，不影响恒星本身，也不影响
+        // 星座名与 DSO 名。选中的那颗仍然显示名字（stars.c 的 `selected ||`），
+        // 否则选中后无从确认选中的是哪颗。
+        toggleStarLabels: (visible) => {
+          this.$stel.core.stars.hints_visible = visible
+          this.updateState()
+        },
+        // 运行期切换星空文化（'western' / 'western-new' / 'chinese' / ...）。
+        // key 必须同时是 skydata/skycultures/<key>/ 的目录名和该目录 index.json
+        // 里的顶层 "id"——引擎 skycultures.c 的 assert 就是比这两者。
+        // addDataSource 在引擎侧按 key 幂等（已加过直接 return），所以重复切换
+        // 不会重复下载；切换时 skyculture_deactivate() 会清空全部星座对象再按新
+        // 文化重建，因此两套文化的星座 id 相同也不冲突。
+        setSkyCulture: (key) => {
+          // key 会被拼进 URL，限定字符集挡掉 ../ 之类的路径穿越。
+          if (typeof key !== 'string' || !/^[A-Za-z0-9_-]+$/.test(key)) {
+            console.error('setSkyCulture: bad key ' + key)
+            return
+          }
+          const core = this.$stel.core
+          core.skycultures.addDataSource({
+            url: process.env.BASE_URL + 'skydata/skycultures/' + key, key: key
+          })
+          core.skycultures.current_id = key
           this.updateState()
         },
         // 空间站（ISS/天宫）显隐
