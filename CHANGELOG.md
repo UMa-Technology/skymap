@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 — v1.1.1
+
+1. **Framing rectangles drawn 2px instead of 1px.** The off-centre (orange) and centred (blue) field-of-view frames in `framing-overlay.vue` now match the border width the mosaic outline already used, so the frame stays legible against a bright sky. The dashed mosaic tile grid is unchanged.
+
 ## 2026-09-14 — v1.1.0
 
 1. **Deep-sky annotation shapes dimmed to 50%.** The unselected hint alpha in `dso_hint_color` went from 0.7 to 0.5, so circles, ellipses and boxes recede into the sky. Names are unaffected: `dso_render_label` overrides the alpha to 0.95 for unselected labels, and a selected object keeps a fully opaque marker.
