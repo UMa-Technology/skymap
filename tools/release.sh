@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # 发版：tools/release.sh vX.Y.Z [--no-push]
 # 在干净的 main 上构建 web 层（版本烙进 window.SkymapBase / skymap-base.json / dist.zip.json），
-# 自检，打 tag vX.Y.Z；再把 dist.zip 三件提交到孤儿分支 dist（LFS），打 dist/vX.Y.Z；推 origin。
+# 自检，打 tag vX.Y.Z；再把 dist.zip 三件提交到孤儿分支 dist（LFS），打 dist/vX.Y.Z；
+# 推 origin：main + vX.Y.Z 一个原子推，dist + dist/vX.Y.Z 另一个。
 # App 仓：bin/skymap_dist.py update vX.Y.Z（git clone --depth 1 --branch dist/vX.Y.Z）。
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,17 +15,24 @@ case "${2:-}" in "") ;; --no-push) PUSH=false ;; *) echo "用法：tools/release
 for t in "$TAG" "dist/$TAG"; do
   git rev-parse -q --verify "refs/tags/$t" >/dev/null && { echo "错误：tag $t 已存在" >&2; exit 2; }
 done
+# 本地 main 落后于远端就别开工：构建要两分钟，推的时候才被拒等于白跑一趟，
+# 而且本地已经多了一个推不上去的 tag，还得手工删。
+if $PUSH; then
+  git fetch -q origin main
+  git merge-base --is-ancestor origin/main main \
+    || { echo "错误：origin/main 有你本地没有的提交，先 pull 再发版" >&2; exit 2; }
+fi
 command -v git-lfs >/dev/null || { echo "错误：需要 git-lfs（brew install git-lfs && git lfs install）" >&2; exit 2; }
 [ "$(git config --get filter.lfs.clean)" = "git-lfs clean -- %f" ] || { echo "错误：git-lfs 过滤器未配置（git lfs install）" >&2; exit 2; }
 WEB="$REPO_DIR/apps/skymap-web"
 
-echo "==> 构建 web 层（SKYMAP_VERSION=$TAG）"
+echo "==> 构建 web 层（SKYMAP_VERSION=${TAG}）"
 ( cd "$WEB" && npm ci >/dev/null && SKYMAP_VERSION="$TAG" npm run build >/dev/null )
 
 echo "==> 自检"
 ( cd "$WEB" && shasum -a 256 -c dist.zip.sha256 >/dev/null )
 v=$(unzip -p "$WEB/dist.zip" skymap-base.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
-[ "$v" = "$TAG" ] || { echo "错误：skymap-base.json version=$v，不是 $TAG" >&2; exit 1; }
+[ "$v" = "$TAG" ] || { echo "错误：skymap-base.json version=${v}，不是 $TAG" >&2; exit 1; }
 j=$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print(m["version"], m["dirty"], m["stale"])' "$WEB/dist.zip.json")
 [ "$j" = "$TAG False False" ] || { echo "错误：dist.zip.json 不干净：$j" >&2; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "错误：构建改动了跟踪文件（字体 / 图标子集漂移？）：" >&2; git status --porcelain >&2; exit 1; }
@@ -62,10 +70,16 @@ X
 git worktree remove --force "$WT"
 
 if $PUSH; then
+  # **main 与 tag 必须一个原子推。** 只推 tag 不推 main 的话，远端的 main 还停在
+  # 上一版，而 tag 指着一个不在任何已推分支上的提交：克隆的人看不到它的历史，
+  # tools/sync-github.sh 走的是 origin/main，也会整版漏掉。
+  #
+  # 2026-09-17 的 v1.1.2 就是这么漏的——tag 和 dist 都推了、main 没推，是同步
+  # GitHub 时才发现的。原子推让「分支没跟上」这件事不可能再发生。
+  git push -q --atomic origin main "$TAG"
   git push -q --atomic origin dist "dist/$TAG"
-  git push -q origin "$TAG"
-  echo "==> 已推 origin：dist、dist/$TAG、$TAG"
+  echo "==> 已推 origin：main、${TAG}、dist、dist/$TAG"
 else
-  echo "==> --no-push：本地已有 tag $TAG、分支 dist、tag dist/$TAG（未推送）"
+  echo "==> --no-push：本地已有 tag ${TAG}、分支 dist、tag dist/${TAG}（未推送）"
 fi
 echo "==> App 仓：bin/skymap_dist.py update $TAG"
