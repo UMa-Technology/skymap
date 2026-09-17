@@ -79,6 +79,51 @@ describe('对 jsbridge.vue 的四个接口', () => {
     w.unmount()
   })
 
+  it("shape: 'circle' 按给的尺寸画圆，不是写死的 2°", () => {
+    // 目镜的真实视场从 0.2° 到 3° 都有。固定 2° 的那个圈（下面那条 -1 哨兵）
+    // 对望远镜用户是个假数，这一条就是为了它加的。
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ fovX: 1.24, fovY: 1.24, shape: 'circle' })
+    expect(w.vm.isCenterCircle).toBe(true)
+    expect(w.vm.targetFovX).toBe(1.24)
+    expect(w.vm.targetFovY).toBe(1.24)
+    w.unmount()
+  })
+
+  it("圆只认一个直径：宽高不等时取大的那个，不画椭圆", () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ fovX: 1.2, fovY: 0.9, shape: 'circle' })
+    expect(w.vm.targetFovX).toBe(1.2)
+    expect(w.vm.targetFovY).toBe(1.2)
+    w.unmount()
+  })
+
+  it('不传 shape 还是矩形，宽高各按各的', () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ fovX: 4, fovY: 3 })
+    expect(w.vm.isCenterCircle).toBe(false)
+    expect(w.vm.targetFovX).toBe(4)
+    expect(w.vm.targetFovY).toBe(3)
+    w.unmount()
+  })
+
+  it('老哨兵 -1 / -1 照旧画 2° 的圆——宿主里还有按它调的旧代码', () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ fovX: -1, fovY: -1 })
+    expect(w.vm.isCenterCircle).toBe(true)
+    expect(w.vm.targetFovX).toBe(2)
+    w.unmount()
+  })
+
+  it('从圆换回矩形要真的换回去，不留在圆上', () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ fovX: 1.2, fovY: 1.2, shape: 'circle' })
+    expect(w.vm.isCenterCircle).toBe(true)
+    w.vm.actions().toggleCenterFov({ fovX: 4, fovY: 3 })
+    expect(w.vm.isCenterCircle).toBe(false)
+    w.unmount()
+  })
+
   it('scaleFov2Target / restoreScaledFov 经公开桥 updateFov 改视场', () => {
     const w = mountIt()
     w.vm.actions().toggleCenterFov({ fovX: 4, fovY: 3 })

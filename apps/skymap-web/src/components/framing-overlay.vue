@@ -249,7 +249,13 @@ export default {
             this.showCenterFov = true
             const fovX = Number(data.fovX)
             const fovY = Number(data.fovY)
-            // 当 fovX 和 fovY 都为 -1 时，绘制一个 2° 的圆
+            // 形状由 `shape` 说了算：'circle' 画圆，其余（含不传）画矩形。
+            //
+            // 圆要按给的尺寸画。**目镜的真实视场从 0.2° 到 3° 都有**，而下面那个
+            // -1 哨兵只会画 2° ——给望远镜用户看一个固定 2° 的圈等于给他一个假数。
+            const wantCircle = data.shape === 'circle'
+            // 老哨兵：fovX 与 fovY 都是 -1 时画一个 2° 的圆。**留着不动**，
+            // 宿主里还有按它调的旧代码；新代码一律走 `shape`。
             if (fovX === -1 && fovY === -1) {
               this.targetFovX = 2
               this.targetFovY = 2
@@ -261,7 +267,14 @@ export default {
               if (data.fovY !== undefined) {
                 this.targetFovY = this.getFovLimit(fovY)
               }
-              this.isCenterCircle = false
+              // 圆只认一个直径：取两边里大的那个，免得宿主传了不等的宽高之后
+              // 画出一个椭圆——那不是任何一只目镜的视场。
+              if (wantCircle) {
+                const d = Math.max(this.targetFovX, this.targetFovY)
+                this.targetFovX = d
+                this.targetFovY = d
+              }
+              this.isCenterCircle = wantCircle
             }
             if (data.rotation !== undefined) {
               this.manualCenterRotation = data.rotation
