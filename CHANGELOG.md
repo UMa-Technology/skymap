@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 — v1.1.3
+
+1. **Coordinate targets name their right ascension in 0h–24h.** Pointing at bare coordinates (`gotoAndLock` with `model: 'custom'`) selects a `coordinates` object whose designation read `RA/DE -07h18m09.2s / …` for the half of the sky past 12h, because `vec3_to_sphe` returns the angle in (−π, π]. The designation now wraps it (`16h41m50.8s`), as the `ra` / `ra_j2000` fields of the selection payload already did.
+
 ## 2026-09-15 — v1.1.1
 
 1. **Framing rectangles drawn 2px instead of 1px.** The off-centre (orange) and centred (blue) field-of-view frames in `framing-overlay.vue` now match the border width the mosaic outline already used, so the frame stays legible against a bright sky. The dashed mosaic tile grid is unchanged.

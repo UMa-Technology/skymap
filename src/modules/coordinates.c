@@ -48,6 +48,9 @@ static void coordinates_get_designations(
     char buf_ra[32], buf_de[32], buf[128];
     double ra, de;
     vec3_to_sphe(coo->po, &ra, &de);
+    // vec3_to_sphe returns the longitude in (-pi, pi], but a right ascension
+    // reads 0h..24h: without the wrap half the sky was named "-07h18m...".
+    ra = eraAnp(ra);
     format_angle(buf_ra, ra, 'h', 1, NULL);
     format_angle(buf_de, de, 'd', 1, NULL);
     snprintf(buf, sizeof(buf), "%s / %s", buf_ra, buf_de);
