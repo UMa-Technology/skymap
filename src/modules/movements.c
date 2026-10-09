@@ -43,6 +43,12 @@ typedef struct movements {
     /* 拖动开关：false 时 on_pan 短路、正在进行的惯性滑行立即停止，
      * 缩放（pinch / on_zoom）不受影响 */
     bool            pan_enabled;
+
+    /* 拖动停稳：单指 pan 抬手后，视角真正停下（没起惯性，或惯性滑完/被打断）
+     * 的那一帧 pan_settled 加一，宿主据此在停稳时判断取景，不用猜惯性要滑多久。
+     * pan_pending 是抬手后等停稳的标记；新的 pan / pinch 开始时作废 */
+    bool            pan_pending;
+    int             pan_settled;
 } movements_t;
 
 
@@ -91,7 +97,8 @@ static int on_pan(const gesture_t *gest, void *user)
      * 把速度判 0，惯性永远启动不了。 */
     now = sys_get_unix_time();
     if (gest->state == GESTURE_BEGIN) {
-        /* 新 pan 开始：清惯性、重置采样基线 */
+        /* 新 pan 开始：清惯性、重置采样基线，上一轮还没停稳的也作废 */
+        movs->pan_pending = false;
         movs->inertia_active = false;
         movs->velocity_yaw = 0;
         movs->velocity_pitch = 0;
@@ -142,6 +149,8 @@ static int on_pan(const gesture_t *gest, void *user)
                     movs->velocity_pitch * movs->velocity_pitch;
         double start_eps = INERTIA_START_EPS_RATIO * core->fov;
         bool second_finger = core->inputs.touches[1].id != 0;
+        /* 双指收尾是缩放，不算一次拖动 */
+        movs->pan_pending = !second_finger;
         if (movs->vel_sampled && idle < INERTIA_MAX_SAMPLE_DT &&
             v2 > start_eps * start_eps && !second_finger) {
             movs->inertia_active = true;
@@ -183,7 +192,8 @@ static int on_pinch(const gesture_t *gest, void *user)
     projection_t proj;
     if (gest->state == GESTURE_BEGIN) {
         start_fov = core->fov;
-        /* pinch 开始：清零正在进行的惯性 */
+        /* pinch 开始：清零正在进行的惯性，这一轮拖动不再报停稳 */
+        movs->pan_pending = false;
         movs->inertia_active = false;
         movs->velocity_yaw = 0;
         movs->velocity_pitch = 0;
@@ -362,6 +372,13 @@ static int movements_update(obj_t *obj, double dt)
         }
     }
 
+    /* —— 拖动停稳通知：抬手后惯性已结束（含被 lock / 动画打断） —— */
+    if (movs->pan_pending && !movs->inertia_active) {
+        movs->pan_pending = false;
+        movs->pan_settled++;
+        module_changed(obj, "pan_settled");
+    }
+
     /* —— 原有键盘逻辑（PC 端，非本次目标但保留） —— */
     if (core->inputs.keys[KEY_RIGHT])
         core->observer->yaw += MOVE_SPEED * core->fov;
@@ -392,6 +409,7 @@ static obj_klass_t movements_klass = {
     .render_order   = -1,
     .attributes = (attribute_t[]){
         PROPERTY(pan_enabled, TYPE_BOOL, MEMBER(movements_t, pan_enabled)),
+        PROPERTY(pan_settled, TYPE_INT, MEMBER(movements_t, pan_settled)),
         {}
     },
 };

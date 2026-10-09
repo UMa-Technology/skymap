@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-10 — v1.1.6
+
+1. **Outbound message `panSettled`** — sent once when a single-finger pan has come to rest: right at release if no inertia starts, otherwise when the inertia glide ends (or is cut short by a lock or an animation). A `getState` is pushed just before it, so its `frameCenter` and `locked` are the resting values. Taps and pinches do not send it, and a new pan or pinch cancels a pending one. The engine counts these in the new `movements.pan_settled` property. Hosts that need to act on where the view stopped (e.g. "is the target still in the framing box") no longer have to guess the inertia duration and wait for the 1 Hz heartbeat.
+
 ## 2026-10-09 — v1.1.5
 
 1. **`getState` reports `frameCenter`** — the centre of the framing box, in the same shape as `currentLocation`. It equals the selected object only while the view is locked on it; after a pan it is the screen centre. `currentLocation` keeps its meaning (the selected object whenever there is one), so existing hosts are unaffected.

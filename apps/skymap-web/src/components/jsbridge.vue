@@ -90,6 +90,13 @@ export default {
     },
     '$store.state.stel.selection': function () {
       this.updateState()
+    },
+    // 拖动停稳（引擎 movements.pan_settled，单指拖动抬手后惯性滑完那一帧加一）：先推一次 getState，
+    // 让宿主拿到停下那一刻的 frameCenter / locked，再发 panSettled。宿主据此判「目标还在不在框里」，
+    // 不用按 1 Hz 心跳加惯性时长去猜
+    '$store.state.stel.movements.pan_settled': function () {
+      this.updateState()
+      jsbridge.postMessage('panSettled', null)
     }
   },
   methods: {

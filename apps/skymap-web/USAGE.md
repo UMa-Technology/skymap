@@ -28,6 +28,7 @@ toggleDsos - 深空天体总开关（含扩展星表，彗星不受影响）；�
   「全不选」= setDsoCatalog(null) + toggleDsos(false)，两条先后无关
 getState.locked - 视角是否正锁在选中目标上；手动拖动、unselect 时引擎清锁，lock / selection 变化会立即推一次 getState
 getState.frameCenter - 取景框中心（结构同 currentLocation）；锁在选中天体上时等于天体坐标，拖开后是屏幕中心。currentLocation 有选中天体时永远报天体坐标
+panSettled（出站，data 为 null）- 单指拖动抬手后视角停稳（没起惯性，或惯性滑完 / 被锁定、动画打断）时发一次；紧接在它前面先推一次 getState，带的是停下那一刻的 frameCenter / locked。点按、双指缩放不发；新一轮拖动或缩放开始会作废上一轮。引擎计数在 movements.pan_settled
 gotoAndLock - 导航并锁定到指定的天体
 ```
 
