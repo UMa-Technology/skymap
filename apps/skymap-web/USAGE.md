@@ -24,6 +24,9 @@ setLocation - 设置你当前的地理位置
 }
 setDateTime - 设置当前的日期和时间isoString 格式 "2024-06-01T12:00:00Z"
 getState - 获取当前应用的状态信息
+toggleDsos - 深空天体总开关（含扩展星表，彗星不受影响）；不改单选星表，setDsoCatalog 选具体星表时自动打开。getState 同名字段上报
+  「全不选」= setDsoCatalog(null) + toggleDsos(false)，两条先后无关
+getState.locked - 视角是否正锁在选中目标上；手动拖动、unselect 时引擎清锁，lock / selection 变化会立即推一次 getState
 gotoAndLock - 导航并锁定到指定的天体
 ```
 

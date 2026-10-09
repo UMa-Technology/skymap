@@ -61,7 +61,10 @@ export default {
       zoomTimeout: null,
       // 锁定视图：拖动开关状态，实际禁用由引擎 movements.pan_enabled 承担；
       // 此处仅保留字段供上报/备用
-      viewLocked: false
+      viewLocked: false,
+      // 深空天体总开关（toggleDsos）。和单选星表分开记：setDsoCatalog 每次都要重算
+      // dsos.visible，靠这个值保住「全不选」，宿主就不用卡着顺序在星表之后补发
+      dsosUserVisible: true
     }
   },
   mounted () {
@@ -80,6 +83,13 @@ export default {
     },
     '$store.state.stel.fov': function () {
       this.updateArrows()
+    },
+    // locked 随锁定目标变：手动拖动时引擎自己清 lock，宿主要立刻知道（不等 1 Hz 的 getState）
+    '$store.state.stel.lock': function () {
+      this.updateState()
+    },
+    '$store.state.stel.selection': function () {
+      this.updateState()
     }
   },
   methods: {
@@ -139,9 +149,15 @@ export default {
       this.$stel.core.comets.visible = (value === 'comets')
       // 彗星普遍暗于默认门限，选中时放开点/名门限（"选了就显示"）
       this.$stel.core.comets.hints_mag_offset = (value === 'comets') ? 8 : 0
-      // 只显示选中的：dsos 类由引擎 any_special 隐藏普通 DSO；彗星是独立模块，
-      // 选彗星时手动把 DSO 层关掉，与 dsos 类行为对齐
-      this.$stel.core.dsos.visible = (value !== 'comets')
+      // 选了具体星表就是要看它：总开关跟着打开。选默认档（null）不动总开关，
+      // 「全不选」= 默认档 + toggleDsos(false)，两条谁先到都一样
+      if (value) this.dsosUserVisible = true
+      this.applyDsosVisible()
+    },
+    // 只显示选中的：dsos 类由引擎 any_special 隐藏普通 DSO；彗星是独立模块，
+    // 选彗星时手动把 DSO 层关掉，与 dsos 类行为对齐。总开关关着时整层都不显示
+    applyDsosVisible () {
+      this.$stel.core.dsos.visible = this.dsosUserVisible && !this.$stel.core.comets.visible
     },
     // 一个名字展开成引擎 designation 候选列表。引擎 core_search 按 designation
     // 精确匹配（大小写不敏感、空格敏感，见 src/core.c core_search），所以要把
@@ -207,6 +223,10 @@ export default {
           // 当前星空文化的 key（引擎的 current_id）
           skyCulture: this.$stel.core.skycultures.current_id,
           drawSelectedTargetLine: this.linesObj != null,
+          // 深空天体总开关（toggleDsos），不是 dsos.visible：选彗星时后者也是 false
+          toggleDsos: this.dsosUserVisible,
+          // 视角是否正锁在选中目标上。手动拖动、unselect 都会清掉
+          locked: !!this.$store.state.stel.lock && this.$store.state.stel.lock === this.$store.state.stel.selection,
           ...this.$refs.framing.stateFields()
         }
       this.$refs.framing.tick()
@@ -286,6 +306,13 @@ export default {
         // 传入 value: null | 'dark_nebulae' | 'lbn' | 'sh2' | 'pk' | 'aco' | 'barnard' | 'comets'
         setDsoCatalog: (value) => {
           this.setDsoCatalog(value)
+          this.updateState()
+        },
+        // 深空天体总开关（含扩展星表；彗星是独立模块，不受影响）。不改单选星表的选择，
+        // setDsoCatalog 选具体星表时会把它重新打开
+        toggleDsos: (visible) => {
+          this.dsosUserVisible = !!visible
+          this.applyDsosVisible()
           this.updateState()
         },
         // 星座图

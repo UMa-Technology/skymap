@@ -4,7 +4,7 @@
 // The terms of the AGPL v3 license can be found in the main directory of this
 // repository.
 
-// 钉死对外协议：window.StellariumActions 的 49 个键与 getState 回包的 33 个键。
+// 钉死对外协议：window.StellariumActions 的 50 个键与 getState 回包的 35 个键。
 // 取景功能拆出去之后，两份清单由 jsbridge.vue 与 framing-overlay.vue 共同凑齐，
 // 且两边不许重名。纯静态：读源码、正则提取，不起 Vue、不碰 DOM。
 import { describe, it, expect } from 'vitest'
@@ -52,7 +52,7 @@ const GOLDEN_ACTIONS = [
   'toggleConstellationLines', 'toogleMilkyway', 'toggleStars', 'toggleStarLabels',
   'toggleSatellites',
   'setSatelliteTLE', 'toggleEquatorLine', 'toggleMeridian', 'toggleEcliptic',
-  'setDsoCatalog', 'setSkyCulture', 'toggleConstellationArt', 'toggleAtmosphere', 'toggleLandscape',
+  'setDsoCatalog', 'toggleDsos', 'setSkyCulture', 'toggleConstellationArt', 'toggleAtmosphere', 'toggleLandscape',
   'setCustomHorizon', 'showCustomHorizon', 'clearCustomHorizon', 'toggleAzimuthalGrid',
   'toggleEquatorialGrid', 'toggleEquatorialJ2000Grid', 'toggleNightMode', 'enableARMode',
   'toggleCenterFov', 'scaleFov2Target', 'restoreScaledFov', 'drawRectWithAltAndAz',
@@ -71,15 +71,16 @@ const GOLDEN_STATE = [
   'toggleEquatorialGrid', 'toggleEquatorialJ2000Grid', 'dsoCatalog', 'dsoCatalogItems',
   'hasCustomHorizon', 'showCustomHorizon', 'toggleNightMode', 'currentTime', 'location',
   'speedTime', 'fov', 'fovX', 'fovY', 'arMode', 'enableArMode', 'currentLocation',
-  'direction', 'drawSelectedTargetLine', 'showMosaic', 'mosaicConfig', 'skyCulture'
+  'direction', 'drawSelectedTargetLine', 'showMosaic', 'mosaicConfig', 'skyCulture',
+  'toggleDsos', 'locked'
 ]
 
 const sorted = (xs) => [...xs].sort()
 
 describe('window.StellariumActions 的键集合', () => {
-  it('黄金清单恰好 49 个', () => {
-    expect(GOLDEN_ACTIONS).toHaveLength(49)
-    expect(new Set(GOLDEN_ACTIONS).size).toBe(49)
+  it('黄金清单恰好 50 个', () => {
+    expect(GOLDEN_ACTIONS).toHaveLength(50)
+    expect(new Set(GOLDEN_ACTIONS).size).toBe(50)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeActions.filter((k) => framingActions.includes(k))
@@ -91,9 +92,9 @@ describe('window.StellariumActions 的键集合', () => {
 })
 
 describe('getState 回包的键集合', () => {
-  it('黄金清单恰好 33 个', () => {
-    expect(GOLDEN_STATE).toHaveLength(33)
-    expect(new Set(GOLDEN_STATE).size).toBe(33)
+  it('黄金清单恰好 35 个', () => {
+    expect(GOLDEN_STATE).toHaveLength(35)
+    expect(new Set(GOLDEN_STATE).size).toBe(35)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeState.filter((k) => framingState.includes(k))

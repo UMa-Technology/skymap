@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-09 — v1.1.4
+
+1. **New bridge action `toggleDsos(visible)`** — a master switch for the deep-sky layer, extended catalogs included (comets live in their own module and are unaffected). It does not change the single-select catalog, and `setDsoCatalog` with a concrete catalog turns it back on, so "show no catalog at all" is `setDsoCatalog(null)` plus `toggleDsos(false)` in either order. Previously a host had to write `core.dsos.visible` directly and resend it after every `setDsoCatalog`, which reset it. `getState` reports the switch as `toggleDsos`.
+2. **`getState` reports `locked`** — whether the view is locked on the current selection. The engine drops the lock on a manual pan; a change of `lock` or `selection` now pushes `getState` at once instead of waiting for the next 1 Hz heartbeat, so a host can reflect it immediately.
+
 ## 2026-09-29 — v1.1.3
 
 1. **Coordinate targets name their right ascension in 0h–24h.** Pointing at bare coordinates (`gotoAndLock` with `model: 'custom'`) selects a `coordinates` object whose designation read `RA/DE -07h18m09.2s / …` for the half of the sky past 12h, because `vec3_to_sphe` returns the angle in (−π, π]. The designation now wraps it (`16h41m50.8s`), as the `ra` / `ra_j2000` fields of the selection payload already did.
