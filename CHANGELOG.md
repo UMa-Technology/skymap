@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-09 — v1.1.5
+
+1. **`getState` reports `frameCenter`** — the centre of the framing box, in the same shape as `currentLocation`. It equals the selected object only while the view is locked on it; after a pan it is the screen centre. `currentLocation` keeps its meaning (the selected object whenever there is one), so existing hosts are unaffected.
+
 ## 2026-10-09 — v1.1.4
 
 1. **New bridge action `toggleDsos(visible)`** — a master switch for the deep-sky layer, extended catalogs included (comets live in their own module and are unaffected). It does not change the single-select catalog, and `setDsoCatalog` with a concrete catalog turns it back on, so "show no catalog at all" is `setDsoCatalog(null)` plus `toggleDsos(false)` in either order. Previously a host had to write `core.dsos.visible` directly and resend it after every `setDsoCatalog`, which reset it. `getState` reports the switch as `toggleDsos`.

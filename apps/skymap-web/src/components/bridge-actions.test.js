@@ -4,7 +4,7 @@
 // The terms of the AGPL v3 license can be found in the main directory of this
 // repository.
 
-// 钉死对外协议：window.StellariumActions 的 50 个键与 getState 回包的 35 个键。
+// 钉死对外协议：window.StellariumActions 的 50 个键与 getState 回包的 36 个键。
 // 取景功能拆出去之后，两份清单由 jsbridge.vue 与 framing-overlay.vue 共同凑齐，
 // 且两边不许重名。纯静态：读源码、正则提取，不起 Vue、不碰 DOM。
 import { describe, it, expect } from 'vitest'
@@ -72,7 +72,7 @@ const GOLDEN_STATE = [
   'hasCustomHorizon', 'showCustomHorizon', 'toggleNightMode', 'currentTime', 'location',
   'speedTime', 'fov', 'fovX', 'fovY', 'arMode', 'enableArMode', 'currentLocation',
   'direction', 'drawSelectedTargetLine', 'showMosaic', 'mosaicConfig', 'skyCulture',
-  'toggleDsos', 'locked'
+  'toggleDsos', 'locked', 'frameCenter'
 ]
 
 const sorted = (xs) => [...xs].sort()
@@ -92,9 +92,9 @@ describe('window.StellariumActions 的键集合', () => {
 })
 
 describe('getState 回包的键集合', () => {
-  it('黄金清单恰好 35 个', () => {
-    expect(GOLDEN_STATE).toHaveLength(35)
-    expect(new Set(GOLDEN_STATE).size).toBe(35)
+  it('黄金清单恰好 36 个', () => {
+    expect(GOLDEN_STATE).toHaveLength(36)
+    expect(new Set(GOLDEN_STATE).size).toBe(36)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeState.filter((k) => framingState.includes(k))

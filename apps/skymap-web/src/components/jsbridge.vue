@@ -219,6 +219,8 @@ export default {
           arMode: this.$store.state.arMode,
           enableArMode: this.$store.state.appEnableARMode,
           currentLocation: this.getCenterRaDecValue(),
+          // 取景框中心：拖离选中天体后就是屏幕中心，currentLocation 此时仍报天体坐标
+          frameCenter: this.getCenterRaDecValue(true),
           direction: ((this.$stel.core.observer.yaw * 180 / Math.PI) % 360 + 360) % 360,
           // 当前星空文化的 key（引擎的 current_id）
           skyCulture: this.$stel.core.skycultures.current_id,
@@ -1251,8 +1253,11 @@ export default {
       // 转换成毫秒值
       return m.utc().toDate().getTime()
     },
-    // 获取中心点的坐标（alt/az 地平坐标 + ra/dec 赤道坐标）
-    getCenterRaDecValue: function () {
+    // 获取中心点的坐标（alt/az 地平坐标 + ra/dec 赤道坐标）。
+    // 默认（currentLocation）：有选中天体就取天体坐标，不管视角还锁不锁在它上面——这是既有语义，宿主在用，不改。
+    // frameOnly（frameCenter）：只在视角正锁在选中天体上时取天体坐标（避开 VIEW→ICRF 的换算误差），
+    // 否则一律取屏幕中心，即取景框真正框住的位置
+    getCenterRaDecValue: function (frameOnly = false) {
       const that = this
 
       const formatDec = function (a) {
@@ -1275,7 +1280,10 @@ export default {
 
       let vIcrf
       // 如果有选中的天体（锁定状态），直接使用天体的 ICRF 坐标以避免转换误差
-      if (this.$stel.core.selection) {
+      const core = this.$stel.core
+      const useSelection = frameOnly ? (core.selection && this.$store.state.stel.lock &&
+        this.$store.state.stel.lock === this.$store.state.stel.selection) : core.selection
+      if (useSelection) {
         const obj = this.$stel.core.selection
         vIcrf = obj.getInfo('radec')
       } else {
