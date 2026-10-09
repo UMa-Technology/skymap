@@ -8,8 +8,9 @@
 // （vitest 配的是 environment: 'node'，没有 jsdom）。DOM 与引擎交互在 sky-ar.js。
 // 与 custom-horizon-geometry.js / custom-horizon.js 的拆分方式一致。
 
-// 星图透明度可用区间：低于 0.2 星图基本看不见，高于 0.8 实景基本没了。
-export const OPACITY_MIN = 0.2
+// 星图透明度可用区间：高于 0.8 实景基本没了。下限原来是 0.2，真机上 20% 的黑纱压着相机，
+// 实景里的天空还是看不清；放到 0.05 让人能把星图压到几乎只剩星点与连线（2026-10-10）。
+export const OPACITY_MIN = 0.05
 export const OPACITY_MAX = 0.8
 
 // 把宿主传来的透明度钳进可用区间。非数值一律退回上限（星图最清晰的一端），

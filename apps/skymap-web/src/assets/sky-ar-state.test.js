@@ -11,12 +11,13 @@ describe('clampOpacity', () => {
   it('区间内原样返回', () => {
     expect(clampOpacity(0.5)).toBe(0.5)
     expect(clampOpacity(0.2)).toBe(0.2)
+    expect(clampOpacity(0.05)).toBe(0.05)
     expect(clampOpacity(0.8)).toBe(0.8)
   })
   it('两端钳位', () => {
-    expect(clampOpacity(0)).toBe(0.2)
+    expect(clampOpacity(0)).toBe(0.05)
     expect(clampOpacity(1)).toBe(0.8)
-    expect(clampOpacity(-3)).toBe(0.2)
+    expect(clampOpacity(-3)).toBe(0.05)
   })
   it('非数值退回上限', () => {
     expect(clampOpacity(undefined)).toBe(0.8)

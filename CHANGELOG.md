@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-10 — v1.1.7
+
+1. **AR sky opacity can go down to 5%.** `SkyAR.setSkyOpacity` now clamps to `[0.05, 0.8]` instead of `[0.2, 0.8]`. On a phone, a 20% veil of the black sky canvas still hid the real sky in the camera feed; 5% leaves little more than the stars and lines. The upper bound and the fallback for non-numeric input (0.8) are unchanged.
+
 ## 2026-10-10 — v1.1.6
 
 1. **Outbound message `panSettled`** — sent once when a single-finger pan has come to rest: right at release if no inertia starts, otherwise when the inertia glide ends (or is cut short by a lock or an animation). A `getState` is pushed just before it, so its `frameCenter` and `locked` are the resting values. Taps and pinches do not send it, and a new pan or pinch cancels a pending one. The engine counts these in the new `movements.pan_settled` property. Hosts that need to act on where the view stopped (e.g. "is the target still in the framing box") no longer have to guess the inertia duration and wait for the 1 Hz heartbeat.
