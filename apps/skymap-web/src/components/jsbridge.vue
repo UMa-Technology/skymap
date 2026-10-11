@@ -471,6 +471,25 @@ export default {
           }
           this.updateState()
         },
+        // 构图：把视角锁在一个天球坐标上随天空走（走时照常，框始终罩着同一片天区）。
+        // ra / dec 是 JNow 的度数（宿主传赤道仪当前指向，Target 框就和 Current 框重合居中）；
+        // 不传就锁在当前屏幕中心。只设跟踪锁、不动 selection：不画选中标记，frameCenter 仍取视图中心。
+        // 单指平移由 lockView 另外禁掉；退出时调 unlockFramingCenter
+        lockFramingCenter: (ss) => {
+          const D2R = Math.PI / 180
+          const ra = ss ? Number(ss.ra) : NaN
+          const dec = ss ? Number(ss.dec) : NaN
+          const pos = Number.isFinite(ra) && Number.isFinite(dec)
+            ? this.$stel.s2c(ra * D2R, dec * D2R)
+            : this.$stel.convertFrame(this.$stel.core.observer, 'VIEW', 'JNOW', [0, 0, -1])
+          const coords = this.$stel.createObj('coordinates', { pos })
+          this.$stel.pointAndLock(coords, ss && ss.duration !== undefined ? Number(ss.duration) : 0.5)
+          this.updateState()
+        },
+        unlockFramingCenter: () => {
+          this.$stel.core.lock = 0
+          this.updateState()
+        },
         lockToSelection: () => {
           if (this.$stel.core.selection) {
             this.$stel.pointAndLock(this.$stel.core.selection, 0.5)
