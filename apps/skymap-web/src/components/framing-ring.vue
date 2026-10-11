@@ -10,31 +10,89 @@ repository.
     data-test="ring-root"
     :style="{ position: 'absolute', left: 0, top: 0, width: vw + 'px', height: vh + 'px', pointerEvents: 'none', opacity: busy ? 0.3 : 1 }"
   >
-    <svg :width="vw" :height="vh" style="position: absolute; left: 0; top: 0; overflow: visible;">
+    <svg
+      :width="vw"
+      :height="vh"
+      style="position: absolute; left: 0; top: 0; overflow: visible;"
+    >
       <!-- 圆环与刻度同一条 path、一次描边：交叠处不叠色，不出亮点 -->
-      <path data-test="ring-path" :d="ringPath" fill="none" stroke="#fff" stroke-width="1.5" :stroke-opacity="pressed ? 0.5 : 0.3" />
-      <path v-if="arcPath" data-test="ring-arc" :d="arcPath" fill="none" stroke="rgba(244, 129, 35, 0.7)" stroke-width="3" stroke-linecap="round" />
-      <path :d="zeroTickPath" stroke="rgba(255, 255, 255, 0.9)" stroke-width="2" stroke-linecap="round" />
+      <path
+        data-test="ring-path"
+        :d="ringPath"
+        fill="none"
+        stroke="#fff"
+        stroke-width="1.5"
+        :stroke-opacity="pressed ? 0.5 : 0.3"
+      />
+      <path
+        v-if="arcPath"
+        data-test="ring-arc"
+        :d="arcPath"
+        fill="none"
+        stroke="rgba(244, 129, 35, 0.7)"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+      <path
+        :d="zeroTickPath"
+        stroke="rgba(255, 255, 255, 0.9)"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
       <template v-if="showHints && !busy">
-        <g v-for="h in hintPaths" :key="h.key" data-test="ring-hint">
-          <path :d="h.d" fill="none" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1.5" stroke-linecap="round" />
-          <text :x="h.tx" :y="h.ty" text-anchor="middle" dominant-baseline="central" fill="rgba(255, 255, 255, 0.5)" font-size="14" font-weight="bold">{{ h.sign }}</text>
+        <g
+          v-for="h in hintPaths"
+          :key="h.key"
+          data-test="ring-hint"
+        >
+          <path
+            :d="h.d"
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.5)"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <text
+            :x="h.tx"
+            :y="h.ty"
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill="rgba(255, 255, 255, 0.5)"
+            font-size="14"
+            font-weight="bold"
+          >{{ h.sign }}</text>
         </g>
       </template>
       <!-- 圆环带热区：透明粗描边，只认描边上的指针 -->
       <circle
         data-test="ring-band"
-        :cx="cx" :cy="cy" :r="r" fill="none" stroke="transparent" :stroke-width="HIT_BAND * 2"
+        :cx="cx"
+        :cy="cy"
+        :r="r"
+        fill="none"
+        stroke="transparent"
+        :stroke-width="HIT_BAND * 2"
         :style="{ pointerEvents: busy ? 'none' : 'stroke', touchAction: 'none' }"
-        @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="onUp"
+        @pointerdown="onDown"
+        @pointermove="onMove"
+        @pointerup="onUp"
+        @pointercancel="onUp"
       />
     </svg>
     <!-- 56×56 热区包着可见标签 -->
     <div
       :style="tagHitStyle"
-      @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="onUp"
+      @pointerdown="onDown"
+      @pointermove="onMove"
+      @pointerup="onUp"
+      @pointercancel="onUp"
     >
-      <div data-test="ring-tag" :style="tagStyle">{{ label }}</div>
+      <div
+        data-test="ring-tag"
+        :style="tagStyle"
+      >
+        {{ label }}
+      </div>
     </div>
   </div>
 </template>
