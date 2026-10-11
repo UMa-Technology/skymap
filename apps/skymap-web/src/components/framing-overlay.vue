@@ -15,26 +15,22 @@
       :style="fovBoxStyle"
     >
       <div
-        v-if="centerFovLabel || (rotatable && manualCenterRotation !== null)"
-        :style="centerFovLabelBoxStyle"
+        v-if="centerFovLabel && !rotatable"
+        :style="centerFovLabelStyle"
       >
-        <!-- 取整后再 % 360：359.5-359.99 经 toFixed(0) 会显示成 360，需回绕到 0（角度显示范围 0-359） -->
-        {{ centerFovLabel }}<span v-if="rotatable && manualCenterRotation !== null"> {{ Math.round(Number(manualCenterRotation)) % 360 }}°</span>
+        {{ centerFovLabel }}
       </div>
-      <template v-if="rotatable">
-        <div :style="rotationLineStyle" />
-        <!-- 外层 56×56 只做触摸热区（透明），内层 44×44 才是可见圆形把手 -->
-        <div
-          :style="rotationHandleStyle"
-          @pointerdown="onRotationPointerDown"
-          @pointermove="onRotationPointerMove"
-          @pointerup="onRotationPointerUp"
-          @pointercancel="onRotationPointerUp"
-        >
-          <div :style="rotationHandleCircleStyle" />
-        </div>
-      </template>
     </div>
+    <framing-ring
+      v-if="rotatable && showCenterFov && !showMosaic"
+      :angle-to-north="angleToNorth"
+      :target-pa="ringTargetPa"
+      :zero-pa="ringZeroPa"
+      :busy="rotationBusy"
+      :show-hints="!hintsUsed"
+      @rotate="onRingRotate"
+      @drag-start="hintsUsed = true"
+    />
     <div
       v-if="showOffCenterRect"
       :style="offCenterRectStyle"
@@ -58,7 +54,7 @@
   </div>
 </template>
 <script>
-// 取景 overlay：主镜取景框（含 PA 旋转把手）/ 赤道仪当前指向框 / 马赛克瓦片。
+// 取景 overlay：主镜取景框（构图态外套角度圆环，见 framing-ring.vue）/ 赤道仪当前指向框 / 马赛克瓦片。
 //
 // 对 jsbridge.vue 只暴露四个方法：actions() / stateFields() / tick() /
 // cameraLongEdgeDeg()。对基座的反向需求只有一条——改视场——走公开桥
@@ -67,9 +63,10 @@
 // rAF 循环只在任一取景框可见时跑（anyVisible）。原先挂载即启动、卸载才停，
 // 什么都不显示时也每帧回调；引擎侧静态天空已压到 3 秒 1 帧，这里不该拖后腿。
 import jsbridge from '@/utils/jsbridge'
-import rotateHandIcon from '@/assets/images/rotate_hand.png'
+import FramingRing from './framing-ring.vue'
 
 export default {
+  components: { FramingRing },
   data: function () {
     return {
       showCenterFov: false,
@@ -86,12 +83,20 @@ export default {
         pointerEvents: 'none'
       },
       manualCenterRotation: null,
-      // 中心框是否可拖动旋转（native 经 toggleCenterFov 的 rotatable 字段控制）
+      // 构图态（native 经 toggleCenterFov 的 rotatable 字段控制）：框外套角度圆环
       rotatable: false,
-      // 旋转把手拖动状态（pointerId），null = 未在拖
-      rotationDrag: null,
-      // 拖动中回传节流时间戳
-      lastRotationPost: 0,
+      // 宿主下发的当前角度（解析 PA）；null = 没解析过
+      currentRotation: null,
+      // 进构图那一刻框的朝向：没有当前角度时作 0° 刻线
+      entryRotation: null,
+      // 对齐 / 刷新进行中：圆环降透明、不可拖
+      rotationBusy: false,
+      // 本次构图拖过没有：拖过就收起提示箭头
+      hintsUsed: false,
+      // 框顶指北的 CSS 角，updateFovBox 每帧刷新，圆环据此把 PA 换成屏幕方位
+      angleToNorth: 0,
+      // 构图态的滚轮拦截器（挂在 window 捕获阶段）
+      wheelGuard: null,
       isCenterCircle: false,
       centerFovLabel: '',
       centerFovLabelStyle: {
@@ -107,44 +112,6 @@ export default {
         fontWeight: 'bold',
         fontFamily: "'SkyFont', sans-serif",
         marginBottom: '4px',
-        pointerEvents: 'none'
-      },
-      // 旋转把手热区：框顶边中点上方，随框一起旋转；是 overlay 内唯一接收触摸的元素。
-      // 56×56 全透明只为放大手指命中范围，可见圆形由内层 rotationHandleCircleStyle 画（44×44）。
-      // 连接线长 18px：热区比圆大 6px（(56-44)/2），所以热区底边只抬 18-6=12px，
-      // 圆的底边才正好落在框顶上方 18px
-      rotationHandleStyle: {
-        position: 'absolute',
-        left: '50%',
-        bottom: 'calc(100% + 12px)',
-        transform: 'translateX(-50%)',
-        width: '56px',
-        height: '56px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'auto',
-        touchAction: 'none',
-        cursor: 'grab'
-      },
-      // 可见把手：44×44 橙色圆 + 中心 24×24 旋转手势图标
-      rotationHandleCircleStyle: {
-        width: '44px',
-        height: '44px',
-        borderRadius: '50%',
-        boxSizing: 'border-box',
-        border: '2px solid rgba(244, 129, 35, 0.7)',
-        background: `rgba(244, 129, 35, 0.3) url(${rotateHandIcon}) no-repeat center / 24px 24px`,
-        pointerEvents: 'none'
-      },
-      rotationLineStyle: {
-        position: 'absolute',
-        left: '50%',
-        bottom: '100%',
-        transform: 'translateX(-50%)',
-        width: '1px',
-        height: '18px',
-        background: 'rgba(244, 129, 35, 0.7)',
         pointerEvents: 'none'
       },
       fovAnimationId: null,
@@ -192,20 +159,12 @@ export default {
     }
   },
   computed: {
-    // 中心框标签位置：常规态挂在框上方（下方留给蓝框自己的 Current 标签，避免两条文字糊一起）；
-    // 构图态（rotatable）改挂框下方并加粗放大 —— 此时框上方被旋转把手占住，
-    // 且蓝框在构图模式下不带标签，下方是空的
-    centerFovLabelBoxStyle () {
-      if (!this.rotatable) return this.centerFovLabelStyle
-      return {
-        ...this.centerFovLabelStyle,
-        bottom: 'auto',
-        top: '100%',
-        marginBottom: '0',
-        marginTop: '6px',
-        fontSize: '15px',
-        fontWeight: 'bold'
-      }
+    ringZeroPa () {
+      if (this.currentRotation !== null) return this.currentRotation
+      return this.entryRotation ?? 0
+    },
+    ringTargetPa () {
+      return this.manualCenterRotation ?? this.ringZeroPa
     },
     anyVisible () {
       return this.showCenterFov || this.showOffCenterRect || this.showMosaic
@@ -215,6 +174,10 @@ export default {
     anyVisible (v) {
       if (v) this.startFovAnimation()
       else this.stopFovAnimation()
+    },
+    rotatable (on) {
+      if (on) this.installWheelGuard()
+      else this.removeWheelGuard()
     },
     '$store.state.stel.fov': function () {
       this.updateFovBox()
@@ -227,8 +190,13 @@ export default {
       document.body.appendChild(this.$refs.overlay)
     }
     if (this.anyVisible) this.startFovAnimation()
+    // 构图态单击不选中：引擎 on_click 钩子返回 true 即吃掉默认选中（src/js/pre.js Module.on）
+    if (this.$stel && typeof this.$stel.on === 'function') {
+      this.$stel.on('click', () => this.rotatable)
+    }
   },
   beforeUnmount () {
+    this.removeWheelGuard()
     this.stopFovAnimation()
     // 清理：将 overlay 从 body 移除
     if (this.$refs.overlay && this.$refs.overlay.parentNode === document.body) {
@@ -245,6 +213,7 @@ export default {
             this.showCenterFov = data
             this.isCenterCircle = false
             this.rotatable = false
+            this.rotationBusy = false
           } else if (typeof data === 'object') {
             this.showCenterFov = true
             const fovX = Number(data.fovX)
@@ -286,7 +255,14 @@ export default {
             } else {
               this.centerFovLabel = ''
             }
+            const wasRotatable = this.rotatable
             this.rotatable = data.rotatable === true
+            this.currentRotation = data.currentRotation !== undefined ? Number(data.currentRotation) : null
+            this.rotationBusy = data.rotationBusy === true
+            if (this.rotatable && !wasRotatable) {
+              this.hintsUsed = false
+              this.entryRotation = this.manualCenterRotation ?? 0
+            }
           }
 
           if (this.showCenterFov) {
@@ -482,14 +458,13 @@ export default {
       const heightPx = clientHeight * Math.tan(targetFovYRad / 4) / Math.tan(currentFovYRad / 4)
 
       // Calculate rotation to align with Alt-Az Up (Zenith)
-      let angleDeg = 0
+      const angleToNorth = this.calculateFovRotation()
+      this.angleToNorth = angleToNorth
+      let angleDeg = angleToNorth
       if (this.manualCenterRotation !== null && this.manualCenterRotation !== undefined) {
-        // manualCenterRotation 是 PA（自北起、向东为正）。calculateFovRotation 给出的是
-        // 让框顶指北的 CSS 角；星图里东在屏幕左侧，而 CSS 正角顺时针，所以 PA 要减。
-        const angleToNorth = this.calculateFovRotation()
+        // manualCenterRotation 是 PA（自北起、向东为正）。angleToNorth 是让框顶指北的 CSS 角；
+        // 星图里东在屏幕左侧，而 CSS 正角顺时针，所以 PA 要减。
         angleDeg = angleToNorth - this.manualCenterRotation
-      } else {
-        angleDeg = this.calculateFovRotation()
       }
 
       this.fovBoxStyle = {
@@ -543,37 +518,33 @@ export default {
       const angleRad = Math.atan2(screenDy, screenDx)
       return (angleRad * 180 / Math.PI) + 90
     },
-    // 旋转把手拖动开始：锁定 pointer capture，阻止事件穿透到星图 canvas
-    onRotationPointerDown (e) {
-      e.target.setPointerCapture(e.pointerId)
-      this.rotationDrag = { pointerId: e.pointerId }
-      e.preventDefault()
-      e.stopPropagation()
-    },
-    // 旋转把手拖动中：按指针相对屏幕中心方位角换算 PA，节流 100ms 回传 native
-    onRotationPointerMove (e) {
-      if (!this.rotationDrag || e.pointerId !== this.rotationDrag.pointerId) return
-      const cx = window.innerWidth / 2
-      const cy = window.innerHeight / 2
-      const theta = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI
-      const cssAngle = theta + 90
-      const angleToNorth = this.calculateFovRotation()
-      let pa = angleToNorth - cssAngle
-      pa = ((pa % 360) + 360) % 360
+    onRingRotate (pa) {
       this.manualCenterRotation = pa
-      const now = Date.now()
-      if (now - this.lastRotationPost > 100) {
-        jsbridge.postMessage('centerFovRotation', { pa })
-        this.lastRotationPost = now
-      }
+      this.updateFovBox()
+      // 吸附到整数度后每度只发一次，不再节流（宿主每收到一条轻震一下）
+      jsbridge.postMessage('centerFovRotation', { pa })
     },
-    // 旋转把手抬手：结束拖动，回传终值（不受节流限制，保证最终帧一定送达）
-    onRotationPointerUp (e) {
-      if (!this.rotationDrag || e.pointerId !== this.rotationDrag.pointerId) return
-      this.rotationDrag = null
-      if (this.manualCenterRotation !== null) {
-        jsbridge.postMessage('centerFovRotation', { pa: this.manualCenterRotation })
+    installWheelGuard () {
+      if (this.wheelGuard || !this.$stel || !this.$stel.canvas) return
+      const canvas = this.$stel.canvas
+      const guard = (e) => {
+        if (e.target !== canvas) return
+        e.preventDefault()
+        e.stopPropagation()
+        // 与引擎 canvas.js onWheelEvent 同倍率，锚点换成画布中心：中心不动，框中心就不动
+        const delta = (e.type === 'DOMMouseScroll' ? -e.detail : e.wheelDelta / 120) * 2
+        const rect = canvas.getBoundingClientRect()
+        this.$stel._core_on_zoom(Math.pow(1.05, delta), rect.width / 2, rect.height / 2)
       }
+      window.addEventListener('mousewheel', guard, { capture: true, passive: false })
+      window.addEventListener('DOMMouseScroll', guard, { capture: true, passive: false })
+      this.wheelGuard = guard
+    },
+    removeWheelGuard () {
+      if (!this.wheelGuard) return
+      window.removeEventListener('mousewheel', this.wheelGuard, { capture: true })
+      window.removeEventListener('DOMMouseScroll', this.wheelGuard, { capture: true })
+      this.wheelGuard = null
     },
     // Update off-center rectangle position and size using DOM (like updateFovBox)
     updateOffCenterRect () {

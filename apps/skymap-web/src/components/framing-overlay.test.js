@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import FramingOverlay from './framing-overlay.vue'
+import FramingRing from './framing-ring.vue'
 
 // 引擎桩：只给 overlay 方法真的会碰的成员。缺成员导致的 TypeError 一律补桩，
 // **不要**为了过测试弱化断言。
@@ -180,5 +181,95 @@ describe('overlay 挂到 document.body 之下', () => {
     expect(el.parentNode).toBe(document.body)
     w.unmount()
     expect(el.parentNode).toBeNull()
+  })
+})
+
+
+describe('构图态圆环', () => {
+  const rotatable = { fovX: 2, fovY: 1, rotation: 98, currentRotation: 123, rotatable: true, label: 'Target' }
+
+  it('rotatable 时挂圆环，旧把手和框下标签都不在', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    expect(w.findComponent(FramingRing).exists()).toBe(true)
+    expect(w.html()).not.toContain('rotate_hand')
+    expect(w.text()).not.toContain('Target')
+  })
+  it('currentRotation 作 0° 刻线、rotation 作目标', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    const ring = w.findComponent(FramingRing)
+    expect(ring.props('zeroPa')).toBe(123)
+    expect(ring.props('targetPa')).toBe(98)
+  })
+  it('没有 currentRotation 时 0° 刻线落在进构图时的框朝向', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ ...rotatable, currentRotation: undefined })
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('zeroPa')).toBe(98)
+  })
+  it('rotationBusy 透传给圆环', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ ...rotatable, rotationBusy: true })
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('busy')).toBe(true)
+  })
+  it('圆环 rotate → 改框角并上行 centerFovRotation', async () => {
+    const post = vi.fn()
+    window.webkit = { messageHandlers: { stellarium: { postMessage: post } } }
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    w.findComponent(FramingRing).vm.$emit('rotate', 90)
+    expect(w.vm.manualCenterRotation).toBe(90)
+    expect(post).toHaveBeenCalledWith(JSON.stringify({ action: 'centerFovRotation', data: { pa: 90 } }))
+    delete window.webkit
+  })
+  it('拖过一次后提示箭头收起；再次进构图重新出现', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    w.findComponent(FramingRing).vm.$emit('drag-start')
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('showHints')).toBe(false)
+    w.vm.actions().toggleCenterFov({ ...rotatable, rotatable: false })
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('showHints')).toBe(true)
+  })
+})
+
+describe('构图态拦单击与滚轮', () => {
+  it('挂载时注册 click 钩子：构图态返回 true（吃掉默认选中），否则 false', async () => {
+    const stel = makeStel()
+    stel.on = vi.fn()
+    const w = mount(FramingOverlay, { global: { mocks: { $stel: stel, $store: makeStore() } } })
+    const cb = stel.on.mock.calls.find(c => c[0] === 'click')[1]
+    expect(cb({ point: { x: 1, y: 1 } })).toBe(false)
+    w.vm.actions().toggleCenterFov({ fovX: 2, fovY: 1, rotatable: true })
+    expect(cb({ point: { x: 1, y: 1 } })).toBe(true)
+  })
+  it('构图态滚轮以画布中心为锚点缩放，事件不再传给画布', async () => {
+    const stel = makeStel()
+    stel._core_on_zoom = vi.fn()
+    const canvas = document.createElement('canvas')
+    canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 800 })
+    document.body.appendChild(canvas)
+    stel.canvas = canvas
+    const w = mount(FramingOverlay, { global: { mocks: { $stel: stel, $store: makeStore() } } })
+    w.vm.actions().toggleCenterFov({ fovX: 2, fovY: 1, rotatable: true })
+    await nextTick()
+    const onCanvas = vi.fn()
+    canvas.addEventListener('mousewheel', onCanvas)
+    const e = new Event('mousewheel', { bubbles: true, cancelable: true })
+    e.wheelDelta = 120
+    e.clientX = 10
+    e.clientY = 10
+    canvas.dispatchEvent(e)
+    expect(stel._core_on_zoom).toHaveBeenCalledWith(Math.pow(1.05, 2), 200, 400)
+    expect(onCanvas).not.toHaveBeenCalled()
+    canvas.remove()
   })
 })
