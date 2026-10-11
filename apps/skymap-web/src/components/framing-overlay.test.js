@@ -210,6 +210,12 @@ describe('构图态圆环', () => {
     await nextTick()
     expect(w.findComponent(FramingRing).props('zeroPa')).toBe(98)
   })
+  it('ringRadius 透传给圆环', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ ...rotatable, ringRadius: 123 })
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('ringRadius')).toBe(123)
+  })
   it('rotationBusy 透传给圆环', async () => {
     const w = mountIt()
     w.vm.actions().toggleCenterFov({ ...rotatable, rotationBusy: true })

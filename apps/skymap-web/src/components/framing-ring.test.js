@@ -54,6 +54,19 @@ describe('画法', () => {
   })
 })
 
+describe('宿主下发半径', () => {
+  it('给了 ringRadius 就按它画（宿主按安全区与过程卡位置算），不按视口公式', () => {
+    const w = mountRing({ ringRadius: 123 })
+    const d = w.find('[data-test="ring-path"]').attributes('d')
+    // 圆从 (cx − r, cy) 起笔：426 − 123 = 303
+    expect(d.startsWith('M303 196.5')).toBe(true)
+  })
+  it('没给（老宿主）就按视口公式', () => {
+    const d = mountRing().find('[data-test="ring-path"]').attributes('d')
+    expect(d.startsWith('M257.5 196.5')).toBe(true)
+  })
+})
+
 describe('拖动', () => {
   it('从圆环带起手、顺时针拖 10° → 目标 PA 减 10，按整数度 emit', async () => {
     const w = mountRing({ zeroPa: 0, targetPa: 0 })

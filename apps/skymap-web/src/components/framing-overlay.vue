@@ -27,6 +27,7 @@
       :target-pa="ringTargetPa"
       :zero-pa="ringZeroPa"
       :busy="rotationBusy"
+      :ring-radius="ringRadius"
       :show-hints="!hintsUsed"
       @rotate="onRingRotate"
       @drag-start="hintsUsed = true"
@@ -91,6 +92,8 @@ export default {
       entryRotation: null,
       // 对齐 / 刷新进行中：圆环降透明、不可拖
       rotationBusy: false,
+      // 宿主算好的圆环半径（避开安全区与过程卡）；null = 圆环按视口公式
+      ringRadius: null,
       // 本次构图拖过没有：拖过就收起提示箭头
       hintsUsed: false,
       // 框顶指北的 CSS 角，updateFovBox 每帧刷新，圆环据此把 PA 换成屏幕方位
@@ -259,6 +262,7 @@ export default {
             this.rotatable = data.rotatable === true
             this.currentRotation = data.currentRotation !== undefined ? Number(data.currentRotation) : null
             this.rotationBusy = data.rotationBusy === true
+            this.ringRadius = data.ringRadius !== undefined ? Number(data.ringRadius) : null
             if (this.rotatable && !wasRotatable) {
               this.hintsUsed = false
               this.entryRotation = this.manualCenterRotation ?? 0

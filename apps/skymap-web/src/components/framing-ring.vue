@@ -111,7 +111,9 @@ export default {
     targetPa: { type: Number, default: 0 },
     zeroPa: { type: Number, default: 0 },
     busy: { type: Boolean, default: false },
-    showHints: { type: Boolean, default: false }
+    showHints: { type: Boolean, default: false },
+    // 宿主按安全区与过程卡位置算好的半径（px）；不给（老宿主）就按视口公式
+    ringRadius: { type: Number, default: null }
   },
   emits: ['rotate', 'drag-start'],
   data () {
@@ -120,7 +122,7 @@ export default {
   computed: {
     cx () { return this.vw / 2 },
     cy () { return this.vh / 2 },
-    r () { return ringRadius(this.vw, this.vh) },
+    r () { return this.ringRadius > 0 ? this.ringRadius : ringRadius(this.vw, this.vh) },
     zeroBearing () { return screenAngleOfPa(this.angleToNorth, this.zeroPa) },
     tagBearing () { return screenAngleOfPa(this.angleToNorth, this.targetPa) },
     delta () { return displayDelta(this.zeroPa, this.targetPa) },
