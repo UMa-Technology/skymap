@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-15 — v1.3.0
+
+1. **Framing ring can label the angle itself.** `toggleCenterFov` takes a new boolean `absoluteLabel`. When it is true the ring tag shows the target position angle (0°–359°, rounded, then wrapped) instead of the signed difference from the current angle, no difference arc is drawn and the tag never turns green. The hint arrows follow the label: dragging clockwise lowers the position angle, so the clockwise side reads `−` and the counter-clockwise side `+` (the difference label keeps `+` clockwise). Hosts that leave the field out get the previous behaviour. The App uses it to frame a sequence target at an absolute angle without a rotator.
+2. **Mosaic grid turns rigidly.** With a mosaic angle other than 0, tile positions used to rotate only with the local north while each tile frame rotated by north minus the angle, so tiles overlapped one another on screen. Tile positions and frames now both rotate by the centre north's screen angle minus the grid position angle (`mosaicScreenLayout`).
+3. **Mosaic tile centres use the tangent-plane inverse.** The reported tile centres are the gnomonic inverse of a rigid grid laid on the plane tangent at the grid centre (`mosaicSkyOffset`, `tangentPlaneToRaDec` in `mosaic-math.js`), with a tile step of `2·tan(fov/2)·(1 − overlap)`. The old flat approximation (declination plus the north offset, right ascension plus the east offset over cos δ of the centre) made tiles in one row alternately wide and narrow at high declination and left gaps. The reported tile `pa` is still the on-screen drawing angle; hosts that write a per-tile sky angle should derive it from the grid angle plus the meridian convergence at each tile centre.
+
 ## 2026-10-10 — v1.1.7
 
 1. **AR sky opacity can go down to 5%.** `SkyAR.setSkyOpacity` now clamps to `[0.05, 0.8]` instead of `[0.2, 0.8]`. On a phone, a 20% veil of the black sky canvas still hid the real sky in the camera feed; 5% leaves little more than the stars and lines. The upper bound and the fallback for non-numeric input (0.8) are unchanged.
