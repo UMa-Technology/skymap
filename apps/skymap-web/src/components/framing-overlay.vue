@@ -28,6 +28,7 @@
       :zero-pa="ringZeroPa"
       :busy="rotationBusy"
       :ring-radius="ringRadius"
+      :absolute-label="absoluteLabel"
       :show-hints="!hintsUsed"
       @rotate="onRingRotate"
       @drag-start="hintsUsed = true"
@@ -65,6 +66,7 @@
 // 什么都不显示时也每帧回调；引擎侧静态天空已压到 3 秒 1 帧，这里不该拖后腿。
 import jsbridge from '@/utils/jsbridge'
 import FramingRing from './framing-ring.vue'
+import { mosaicSkyOffset, mosaicScreenLayout, tangentPlaneToRaDec } from './mosaic-math'
 
 export default {
   components: { FramingRing },
@@ -88,6 +90,8 @@ export default {
       rotatable: false,
       // 宿主下发的当前角度（解析 PA）；null = 没解析过
       currentRotation: null,
+      // 目标入口：圆环标签显示角度本身（toggleCenterFov 的 absoluteLabel 字段）
+      absoluteLabel: false,
       // 进构图那一刻框的朝向：没有当前角度时作 0° 刻线
       entryRotation: null,
       // 对齐 / 刷新进行中：圆环降透明、不可拖
@@ -217,6 +221,7 @@ export default {
             this.isCenterCircle = false
             this.rotatable = false
             this.rotationBusy = false
+            this.absoluteLabel = false
           } else if (typeof data === 'object') {
             this.showCenterFov = true
             const fovX = Number(data.fovX)
@@ -262,6 +267,7 @@ export default {
             this.rotatable = data.rotatable === true
             this.currentRotation = data.currentRotation !== undefined ? Number(data.currentRotation) : null
             this.rotationBusy = data.rotationBusy === true
+            this.absoluteLabel = data.absoluteLabel === true
             this.ringRadius = data.ringRadius !== undefined ? Number(data.ringRadius) : null
             if (this.rotatable && !wasRotatable) {
               this.hintsUsed = false
@@ -754,8 +760,9 @@ export default {
 
       // 计算有效步进（考虑重叠）- 角度空间
       const overlapFactor = 1 - overlap / 100
-      const stepXAngle = (this.targetFovX || 10) * overlapFactor // 角度步进
-      const stepYAngle = (this.targetFovY || 5) * overlapFactor
+      // 切平面上的步进（格中心反投影用）：格宽在焦平面上是 2·tan(视场/2)
+      const planeStepX = 2 * Math.tan(targetFovXRad / 2) * overlapFactor
+      const planeStepY = 2 * Math.tan(targetFovYRad / 2) * overlapFactor
       // 屏幕步进
       const stepXPx = tileWidthPx * overlapFactor
       const stepYPx = tileHeightPx * overlapFactor
@@ -764,8 +771,10 @@ export default {
       const tiles = []
       let index = 1
 
-      // 获取中心 FOV 框的旋转角度（作为参考）
+      // 中心处北向的屏幕角（calculateFovRotation 不含 PA）
       const centerRotation = this.calculateFovRotation()
+      // 网格在天空中的朝向（PA，北向东）：马赛克自己的角度优先，否则中心框的
+      const gridPa = (mosaicRotation !== null && mosaicRotation !== undefined) ? mosaicRotation : this.manualCenterRotation
 
       let minScreenX = Infinity
       let maxScreenX = -Infinity
@@ -774,35 +783,20 @@ export default {
 
       for (let row = 0; row < y; row++) {
         for (let col = 0; col < x; col++) {
-          // 计算相对于中心的屏幕偏移（未旋转）
-          const offsetXPx = (col - (x - 1) / 2) * stepXPx
-          const offsetYPx = (row - (y - 1) / 2) * stepYPx
-
-          // 应用中心旋转变换来获得屏幕位置（用于绘制）
-          const rotRad = centerRotation * Math.PI / 180
-          const rotatedOffsetX = offsetXPx * Math.cos(rotRad) - offsetYPx * Math.sin(rotRad)
-          const rotatedOffsetY = offsetXPx * Math.sin(rotRad) + offsetYPx * Math.cos(rotRad)
-
-          // 屏幕坐标（相对于画布中心）
-          const screenX = clientWidth / 2 + rotatedOffsetX
-          const screenY = clientHeight / 2 + rotatedOffsetY
+          // 屏幕排布：网格刚性，格位与每格框都按「中心北向 − 网格 PA」转（与回传的格中心、宿主按格算的角度同一模型）。
+          // 原来格位只按北向转、每格框各按本地北向 − 角度转，角度 ≠ 0 时格位没转、框转了，网格互相压叠
+          const layout = mosaicScreenLayout({ col, row, x, y, stepXPx, stepYPx, angleToNorth: centerRotation, gridPa })
+          const screenX = clientWidth / 2 + layout.dx
+          const screenY = clientHeight / 2 + layout.dy
+          const tileRotation = layout.rotation
 
           // 计算该 tile 中心的 RA/Dec 和 Alt/Az
           // 使用角度偏移直接在 VIEW frame 中计算，而不是用旋转后的屏幕坐标逆投影
-          const offsetXAngle = (col - (x - 1) / 2) * stepXAngle * Math.PI / 180
-          const offsetYAngle = (row - (y - 1) / 2) * stepYAngle * Math.PI / 180
-          const tileCenter = this.calculateTileCenter(offsetXAngle, offsetYAngle)
-
-          // 计算该 tile 位置的独立 PA
-          let tileRotation = centerRotation
-          if (tileCenter && tileCenter.az !== undefined && tileCenter.alt !== undefined) {
-            tileRotation = this.calculateFovRotationAt(tileCenter.az, tileCenter.alt)
-            // 如果有手动设置的旋转角度，应用它（优先使用 mosaic 自己的 rotation，否则使用 centerFov 的）
-            const effectiveRotation = (mosaicRotation !== null && mosaicRotation !== undefined) ? mosaicRotation : this.manualCenterRotation
-            if (effectiveRotation !== null && effectiveRotation !== undefined) {
-              tileRotation = tileRotation - effectiveRotation
-            }
-          }
+          // 刚性网格画在以网格中心为切点的平面上：相邻两格中心在平面上相距 2·tan(视场/2)·(1 − 重叠)
+          const offsetXPlane = (col - (x - 1) / 2) * planeStepX
+          const offsetYPlane = (row - (y - 1) / 2) * planeStepY
+          // 格中心按网格的天空朝向转过去、再从切平面反投影回天球，与画出来的网格一致
+          const tileCenter = this.calculateTileCenter(offsetXPlane, offsetYPlane, gridPa)
 
           // 计算 bounding box
           const w = tileWidthPx / 2
@@ -899,9 +893,9 @@ export default {
       }
     },
     // 根据角度偏移计算 tile 中心的 RA/Dec 和 Alt/Az
-    // offsetXAngle, offsetYAngle: 相对于屏幕中心的角度偏移（弧度）
+    // offsetX, offsetY: 网格坐标系里相对于中心的切平面偏移（向右 / 向下，单位 = 弧度的正切）
     // 这个方法直接在 VIEW frame 中计算，避免屏幕坐标旋转后再逆投影导致的误差
-    calculateTileCenter (offsetXAngle, offsetYAngle) {
+    calculateTileCenter (offsetX, offsetY, paDeg) {
       if (!this.$stel || !this.$stel.core) return null
 
       const obs = this.$stel.core.observer
@@ -915,17 +909,14 @@ export default {
       const centerRa = centerRaDec[0]
       const centerDec = centerRaDec[1]
 
-      // 3. 计算 tile 在赤道坐标系中的偏移
-      // 屏幕 X 正向（向右）对应天球西方，RA 减小
-      // 屏幕 Y 正向（向下）对应 Dec 减小
-      // 注意：RA 偏移需要除以 cos(dec) 来修正
-      const cosDec = Math.cos(centerDec)
-      const raOffset = cosDec > 0.01 ? -offsetXAngle / cosDec : -offsetXAngle
-      const decOffset = -offsetYAngle
+      // 3. 切平面坐标（offsetX 向右、offsetY 向下，按网格朝向 paDeg 转成朝东 / 朝北），再反投影回天球。
+      // 原来按「dec + 北偏移、ra + 东偏移 ÷ cos(中心赤纬)」平面近似，高赤纬同一排的格子一宽一窄、留缝
+      const { north, east } = mosaicSkyOffset(offsetX, offsetY, paDeg)
+      const tile = tangentPlaneToRaDec(centerRa, centerDec, east, north)
 
       // 4. 计算新的 RA/Dec
-      const tileRa = centerRa + raOffset
-      const tileDec = centerDec + decOffset
+      const tileRa = tile.ra
+      const tileDec = tile.dec
 
       // 5. 转换回 ICRF 笛卡尔坐标
       const vTileIcrf = this.$stel.s2c(tileRa, tileDec)

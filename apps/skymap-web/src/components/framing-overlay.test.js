@@ -210,6 +210,15 @@ describe('构图态圆环', () => {
     await nextTick()
     expect(w.findComponent(FramingRing).props('zeroPa')).toBe(98)
   })
+  it('absoluteLabel 透传给圆环；之后不带它的调用复位', async () => {
+    const w = mountIt()
+    w.vm.actions().toggleCenterFov({ ...rotatable, absoluteLabel: true })
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('absoluteLabel')).toBe(true)
+    w.vm.actions().toggleCenterFov(rotatable)
+    await nextTick()
+    expect(w.findComponent(FramingRing).props('absoluteLabel')).toBe(false)
+  })
   it('ringRadius 透传给圆环', async () => {
     const w = mountIt()
     w.vm.actions().toggleCenterFov({ ...rotatable, ringRadius: 123 })
