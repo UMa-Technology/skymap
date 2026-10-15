@@ -98,3 +98,37 @@ describe('拖动', () => {
     expect(w.emitted('rotate')).toBeFalsy()
   })
 })
+
+describe('目标入口 absoluteLabel', () => {
+  it('标签显示目标角度本身，不是差值', () => {
+    const w = mountRing({ zeroPa: 0, targetPa: 125, absoluteLabel: true })
+    expect(w.find('[data-test="ring-tag"]').text()).toBe('125°')
+  })
+  it('负角归一到 0–359', () => {
+    const w = mountRing({ zeroPa: 0, targetPa: -235, absoluteLabel: true })
+    expect(w.find('[data-test="ring-tag"]').text()).toBe('125°')
+  })
+  it('不画差值弧，目标在 0° 也不变绿', () => {
+    const w = mountRing({ zeroPa: 0, targetPa: 0, absoluteLabel: true })
+    expect(w.find('[data-test="ring-arc"]').exists()).toBe(false)
+    expect(w.find('[data-test="ring-tag"]').text()).toBe('0°')
+    expect(w.vm.aligned).toBe(false)
+  })
+  // 顺时针拖 PA 减小、标签数变小：顺时针一侧的提示要标 −，否则往「+」拖数反而变小
+  it('提示箭头正负跟标签走：顺时针一侧标 −、逆时针一侧标 +', () => {
+    const w = mountRing({ zeroPa: 0, targetPa: 30, absoluteLabel: true })
+    const signs = Object.fromEntries(w.vm.hintPaths.map(h => [h.key, h.sign]))
+    expect(signs[1]).toBe('−')
+    expect(signs[-1]).toBe('+')
+  })
+})
+
+describe('设备入口提示箭头', () => {
+  // 标签是 当前 − 目标，顺时针拖差值变大
+  it('顺时针一侧标 +、逆时针一侧标 −', () => {
+    const signs = Object.fromEntries(mountRing({ zeroPa: 0, targetPa: 30 }).vm.hintPaths.map(h => [h.key, h.sign]))
+    expect(signs[1]).toBe('+')
+    expect(signs[-1]).toBe('−')
+  })
+})
+

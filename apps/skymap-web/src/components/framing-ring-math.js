@@ -33,6 +33,11 @@ export function deltaLabel (d) {
   return (d > 0 ? '+' : '−') + Math.abs(d) + '°'
 }
 
+// 目标入口（App 从序列目标进星图构图）：标签显示目标角度本身，0–359，不显示差值
+export function absoluteAngleLabel (pa) {
+  return `${Math.round(norm360(pa)) % 360}°`
+}
+
 export function screenAngleOfPa (angleToNorth, pa) {
   return angleToNorth - pa
 }

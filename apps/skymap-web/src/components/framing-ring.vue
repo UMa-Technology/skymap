@@ -98,7 +98,7 @@ repository.
 </template>
 <script>
 import {
-  HIT_BAND, ringRadius, norm360, displayDelta, deltaLabel, screenAngleOfPa,
+  HIT_BAND, ringRadius, norm360, displayDelta, deltaLabel, absoluteAngleLabel, screenAngleOfPa,
   tagTextRotation, pointerBearing, bearingDelta, pointOnRing
 } from './framing-ring-math'
 
@@ -113,7 +113,9 @@ export default {
     busy: { type: Boolean, default: false },
     showHints: { type: Boolean, default: false },
     // 宿主按安全区与过程卡位置算好的半径（px）；不给（老宿主）就按视口公式
-    ringRadius: { type: Number, default: null }
+    ringRadius: { type: Number, default: null },
+    // 目标入口：标签显示目标角度本身（不是与当前角的差），不画差值弧、不变绿
+    absoluteLabel: { type: Boolean, default: false }
   },
   emits: ['rotate', 'drag-start'],
   data () {
@@ -126,8 +128,8 @@ export default {
     zeroBearing () { return screenAngleOfPa(this.angleToNorth, this.zeroPa) },
     tagBearing () { return screenAngleOfPa(this.angleToNorth, this.targetPa) },
     delta () { return displayDelta(this.zeroPa, this.targetPa) },
-    aligned () { return Math.abs(this.delta) <= 1 },
-    label () { return deltaLabel(this.delta) },
+    aligned () { return !this.absoluteLabel && Math.abs(this.delta) <= 1 },
+    label () { return this.absoluteLabel ? absoluteAngleLabel(this.targetPa) : deltaLabel(this.delta) },
     ringPath () {
       const { cx, cy, r } = this
       let d = `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`
@@ -145,7 +147,7 @@ export default {
       return `M${x0} ${y0}L${x1} ${y1}`
     },
     arcPath () {
-      if (this.aligned) return null
+      if (this.aligned || this.absoluteLabel) return null
       const from = this.zeroBearing
       const to = from + this.delta
       const [x0, y0] = pointOnRing(this.cx, this.cy, this.r, from)
@@ -170,7 +172,8 @@ export default {
           d: `M${x0} ${y0}A${R} ${R} 0 0 ${sgn > 0 ? 1 : 0} ${x1} ${y1}M${w0x} ${w0y}L${x1} ${y1}L${w1x} ${w1y}`,
           tx,
           ty,
-          sign: sgn > 0 ? '+' : '−'
+          // 差值标签顺时针变大；绝对角度标签顺时针变小（PA 减），正负号跟着标签走
+          sign: (sgn > 0) !== this.absoluteLabel ? '+' : '−'
         }
       })
     },
