@@ -139,8 +139,8 @@ static int custom_horizon_init(obj_t *obj, json_value *args)
 {
     custom_horizon_t *ch = (void*)obj;
     fader_init(&ch->visible, false); // hidden until shown
-    vec4_set(ch->fill_color, 0xF4 / 255.0, 0x81 / 255.0, 0x23 / 255.0, 0.05);
-    vec4_set(ch->line_color, 0xF4 / 255.0, 0x81 / 255.0, 0x23 / 255.0, 0.10);
+    vec4_set(ch->fill_color, 0xF4 / 255.0, 0x81 / 255.0, 0x23 / 255.0, 0.15);
+    vec4_set(ch->line_color, 0xF4 / 255.0, 0x81 / 255.0, 0x23 / 255.0, 0.30);
     return 0;
 }
 
