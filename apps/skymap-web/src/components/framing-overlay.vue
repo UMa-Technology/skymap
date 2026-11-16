@@ -50,7 +50,7 @@
     >
       <path
         :d="skyCoveragePath"
-        fill="rgba(244, 129, 35, 0.05)"
+        :fill="skyCoverageFill"
         fill-rule="evenodd"
         stroke="rgba(244, 129, 35, 0.7)"
         stroke-width="2"
@@ -87,7 +87,7 @@
 import jsbridge from '@/utils/jsbridge'
 import FramingRing from './framing-ring.vue'
 import { mosaicSkyOffset, mosaicScreenLayout, tangentPlaneToRaDec } from './mosaic-math'
-import { coverageOutlineAltAz, screenRingsToPath } from './coverage-math'
+import { coverageOutlineAltAz, screenRingsToPath, regionContainsAltAz } from './coverage-math'
 
 export default {
   components: { FramingRing },
@@ -187,6 +187,7 @@ export default {
       showSkyCoverage: false,
       skyCoverage: null,
       skyCoveragePath: '',
+      skyCoverageFill: 'none',
       skyCoverageLabelPos: null,
       lastMosaicUpdate: 0
     }
@@ -330,10 +331,18 @@ export default {
             return
           }
           const az = Number(data.az)
+          const azSpan = Number(data.azSpan)
+          const altMin = Number(data.altMin)
+          const altMax = Number(data.altMax)
+          if (![azSpan, altMin, altMax].every(Number.isFinite)) {
+            console.warn('toggleSkyCoverage: azSpan / altMin / altMax must be numbers', data)
+            this.actions().toggleSkyCoverage(false)
+            return
+          }
           this.skyCoverage = {
-            azSpan: Number(data.azSpan),
-            altMin: Number(data.altMin),
-            altMax: Number(data.altMax),
+            azSpan,
+            altMin,
+            altMax,
             az: data.az === undefined || data.az === null || !Number.isFinite(az) ? null : az,
             label: data.label !== undefined ? String(data.label) : ''
           }
@@ -651,7 +660,18 @@ export default {
       const project = ([az, alt]) => this.viewToScreen(
         this.$stel.convertFrame(obs, 'OBSERVED', 'VIEW', this.$stel.s2c(az * toRad, alt * toRad)))
       const rings = coverageOutlineAltAz({ az0, azSpan, altMin, altMax })
-      this.skyCoveragePath = screenRingsToPath(rings.map((ring) => ring.map(project)))
+      const screenRings = rings.map((ring) => ring.map(project))
+      let d = screenRingsToPath(screenRings)
+      // 有断点时 SVG 会用弦线补齐开口子路径去填充，填出来的不是真实区域，只描边
+      const broken = screenRings.some((ring) => ring.includes(null))
+      // 视线正后方落在范围内：投影后区域在曲线外侧，外加一个全屏框让 evenodd 翻转
+      const anti = this.$stel.c2s(this.$stel.convertFrame(obs, 'VIEW', 'OBSERVED', [0, 0, 1]))
+      const region = { az0, azSpan, altMin, altMax }
+      if (!broken && regionContainsAltAz(region, this.$stel.anp(anti[0]) / toRad, anti[1] / toRad)) {
+        d = 'M-100000.0 -100000.0H100000.0V100000.0H-100000.0Z' + d
+      }
+      this.skyCoveragePath = d
+      this.skyCoverageFill = broken ? 'none' : 'rgba(244, 129, 35, 0.05)'
       const anchor = project([az0, altMin])
       this.skyCoverageLabelPos = anchor ? { x: anchor[0], y: anchor[1] - 8 } : null
     },

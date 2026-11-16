@@ -39,17 +39,29 @@ export function coverageOutlineAltAz ({ az0, azSpan, altMin, altMax, stepDeg = 2
   return [ring]
 }
 
-// 屏幕点列 → SVG path。null 是断点（投影奇点附近的点）：环内无断点才用 Z 闭合
+// (az, alt) 是否落在覆盖范围内（度）。投影奇点（视线正后方）落在范围内时，
+// 立体投影后区域在边界曲线外侧，调用方据此翻转填充
+export function regionContainsAltAz ({ az0, azSpan, altMin, altMax }, az, alt) {
+  if (alt < altMin || alt > altMax) return false
+  if (azSpan >= 360) return true
+  const d = ((az - az0) % 360 + 540) % 360 - 180
+  return Math.abs(d) <= azSpan / 2
+}
+
+// 屏幕点列 → SVG path。null 是断点（投影奇点附近的点）：环内无断点才用 Z 闭合；
+// 有断点时从第一个断点之后起笔，首尾那段（环的接缝）就不会被断成两截
 export function screenRingsToPath (rings) {
   let d = ''
-  for (const ring of rings) {
+  for (let ring of rings) {
+    const cut = ring.indexOf(null)
+    if (cut >= 0) ring = [...ring.slice(cut + 1), ...ring.slice(0, cut + 1)]
     let penUp = true
     for (const p of ring) {
       if (!p) { penUp = true; continue }
       d += (penUp ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)
       penUp = false
     }
-    if (ring.length && !ring.includes(null)) d += 'Z'
+    if (ring.length && cut < 0) d += 'Z'
   }
   return d
 }

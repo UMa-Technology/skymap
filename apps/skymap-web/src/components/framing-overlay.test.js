@@ -328,6 +328,34 @@ describe('拍摄覆盖轮廓 toggleSkyCoverage', () => {
     w.unmount()
   })
 
+  it('视线反方向落在区域内时外加全屏框翻转填充', () => {
+    // c2s 桩回 [0, 0]：视线反方向（以及视口中心）都在方位 0°、高度 0°
+    const w = mountFacing()
+    w.vm.actions().toggleSkyCoverage({ ...ARCH, az: 0 })
+    expect(w.vm.skyCoveragePath.startsWith('M-100000.0 -100000.0')).toBe(true)
+    w.vm.actions().toggleSkyCoverage({ ...ARCH, az: 180 })
+    expect(w.vm.skyCoveragePath.startsWith('M-100000')).toBe(false)
+    w.unmount()
+  })
+
+  it('环有断点时不填充', () => {
+    const stel = { ...makeStel(), convertFrame: vi.fn(() => [0, 0, 1]), c2s: () => [Math.PI, 0] }
+    const w = mount(FramingOverlay, { global: { mocks: { $stel: stel, $store: makeStore() } } })
+    w.vm.actions().toggleSkyCoverage(ARCH)
+    expect(w.vm.skyCoverageFill).toBe('none')
+    w.unmount()
+  })
+
+  it('缺数值字段时警告并收起', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const w = mountFacing()
+    w.vm.actions().toggleSkyCoverage({ azSpan: 240, altMin: -16 })
+    expect(w.vm.showSkyCoverage).toBe(false)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+    w.unmount()
+  })
+
   it('视线反方向的点断开路径', () => {
     const w = mountFacing()
     expect(w.vm.viewToScreen([0, 0, 1])).toBeNull()

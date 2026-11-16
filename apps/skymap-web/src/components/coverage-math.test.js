@@ -5,7 +5,7 @@
 // repository.
 
 import { describe, it, expect } from 'vitest'
-import { coverageOutlineAltAz, screenRingsToPath } from './coverage-math'
+import { coverageOutlineAltAz, screenRingsToPath, regionContainsAltAz } from './coverage-math'
 
 const ARCH = { az0: 261.4, azSpan: 240, altMin: -16, altMax: 90 }
 const EPS = 1e-9
@@ -75,10 +75,33 @@ describe('screenRingsToPath', () => {
   it('无断点闭合', () => {
     expect(screenRingsToPath([[[0, 0], [10, 0], [10, 10]]])).toBe('M0.0 0.0L10.0 0.0L10.0 10.0Z')
   })
-  it('有断点不闭合、分段', () => {
-    expect(screenRingsToPath([[[0, 0], null, [5, 5], [6, 6]]])).toBe('M0.0 0.0M5.0 5.0L6.0 6.0')
+  it('有断点不闭合，从断点后起笔让首尾那段连上', () => {
+    expect(screenRingsToPath([[[0, 0], null, [5, 5], [6, 6]]])).toBe('M5.0 5.0L6.0 6.0L0.0 0.0')
+    expect(screenRingsToPath([[[0, 0], [1, 1], null, [5, 5], null, [7, 7]]]))
+      .toBe('M5.0 5.0M7.0 7.0L0.0 0.0L1.0 1.0')
+  })
+  it('全是断点回空串', () => {
+    expect(screenRingsToPath([[null, null]])).toBe('')
   })
   it('空输入回空串', () => {
     expect(screenRingsToPath([])).toBe('')
+  })
+})
+
+describe('regionContainsAltAz', () => {
+  const R = { az0: 0, azSpan: 240, altMin: -16, altMax: 90 }
+  it('方位与高度都在范围内', () => {
+    expect(regionContainsAltAz(R, 350, 10)).toBe(true)
+    expect(regionContainsAltAz(R, 119, 89)).toBe(true)
+  })
+  it('方位出界', () => {
+    expect(regionContainsAltAz(R, 180, 10)).toBe(false)
+  })
+  it('高度出界', () => {
+    expect(regionContainsAltAz(R, 0, -20)).toBe(false)
+    expect(regionContainsAltAz({ ...R, altMax: 60 }, 0, 70)).toBe(false)
+  })
+  it('整圈只看高度', () => {
+    expect(regionContainsAltAz({ ...R, azSpan: 360, altMax: 60 }, 180, 30)).toBe(true)
   })
 })
