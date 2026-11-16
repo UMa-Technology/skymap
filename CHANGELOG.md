@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 2026-11-16 — v1.3.1
 
 1. **Sky coverage outline.** New action `toggleSkyCoverage` draws the outer outline of an alt-az region on the sky map, projected with the current stereographic view and redrawn every frame, so hosts can show the coverage of a wide multi-station shoot (Milky Way arch, fisheye) instead of a screen rectangle. Pass `{ azSpan, altMin, altMax, az?, label? }` in degrees (azimuth from north through east), or `false` to hide it. Without `az` the outline follows the azimuth of the view centre while its altitude range stays fixed; with `az` it stays at that azimuth. `azSpan ≥ 360` draws a band between the two altitudes and `altMax ≥ 90` closes the top at the zenith. It is independent of `toggleCenterFov`. `PROTOCOL` is unchanged; hosts that call it need a base version that has it.
+2. **Custom horizon is easier to see.** The custom horizon fill alpha goes from 0.05 to 0.15 and the ridge line from 0.10 to 0.30; the silhouette was barely visible against the night sky.
 
 ## 2026-10-15 — v1.3.0
 
