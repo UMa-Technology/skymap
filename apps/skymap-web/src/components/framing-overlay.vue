@@ -44,6 +44,25 @@
         {{ offCenterRectLabel }}
       </div>
     </div>
+    <svg
+      v-if="showSkyCoverage"
+      style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none;"
+    >
+      <path
+        :d="skyCoveragePath"
+        fill="rgba(244, 129, 35, 0.05)"
+        fill-rule="evenodd"
+        stroke="rgba(244, 129, 35, 0.7)"
+        stroke-width="2"
+        stroke-linejoin="round"
+      />
+    </svg>
+    <div
+      v-if="showSkyCoverage && skyCoverage && skyCoverage.label && skyCoverageLabelPos"
+      :style="skyCoverageLabelStyle"
+    >
+      {{ skyCoverage.label }}
+    </div>
     <!-- Mosaic Grid -->
     <div
       v-for="tile in mosaicTiles"
@@ -56,7 +75,8 @@
   </div>
 </template>
 <script>
-// 取景 overlay：主镜取景框（构图态外套角度圆环，见 framing-ring.vue）/ 赤道仪当前指向框 / 马赛克瓦片。
+// 取景 overlay：主镜取景框（构图态外套角度圆环，见 framing-ring.vue）/ 赤道仪当前指向框 / 马赛克瓦片 /
+// 大视场拍摄覆盖轮廓（coverage-math.js）。
 //
 // 对 jsbridge.vue 只暴露四个方法：actions() / stateFields() / tick() /
 // cameraLongEdgeDeg()。对基座的反向需求只有一条——改视场——走公开桥
@@ -67,6 +87,7 @@
 import jsbridge from '@/utils/jsbridge'
 import FramingRing from './framing-ring.vue'
 import { mosaicSkyOffset, mosaicScreenLayout, tangentPlaneToRaDec } from './mosaic-math'
+import { coverageOutlineAltAz, screenRingsToPath } from './coverage-math'
 
 export default {
   components: { FramingRing },
@@ -162,6 +183,11 @@ export default {
         overlap: 10 // 重叠百分比
       },
       mosaicTiles: [], // 存储每个 tile 的样式和信息
+      // 拍摄覆盖轮廓：{ azSpan, altMin, altMax, az: number|null, label }，见 toggleSkyCoverage
+      showSkyCoverage: false,
+      skyCoverage: null,
+      skyCoveragePath: '',
+      skyCoverageLabelPos: null,
       lastMosaicUpdate: 0
     }
   },
@@ -174,7 +200,22 @@ export default {
       return this.manualCenterRotation ?? this.ringZeroPa
     },
     anyVisible () {
-      return this.showCenterFov || this.showOffCenterRect || this.showMosaic
+      return this.showCenterFov || this.showOffCenterRect || this.showMosaic || this.showSkyCoverage
+    },
+    skyCoverageLabelStyle () {
+      const p = this.skyCoverageLabelPos
+      return {
+        position: 'absolute',
+        left: (p ? p.x : 0) + 'px',
+        top: (p ? p.y : 0) + 'px',
+        transform: 'translate(-50%, -100%)',
+        whiteSpace: 'nowrap',
+        color: 'rgba(244, 129, 35, 0.9)',
+        fontSize: '13px',
+        fontWeight: 'bold',
+        fontFamily: "'SkyFont', sans-serif",
+        pointerEvents: 'none'
+      }
     }
   },
   watch: {
@@ -278,6 +319,26 @@ export default {
           if (this.showCenterFov) {
             this.updateFovBox()
           }
+        },
+        // 大视场多机位拍摄的覆盖外轮廓：false 收起；对象 { azSpan, altMin, altMax, az?, label? }（度）。
+        // 不传 az 时每帧跟随视口中心方位，高度范围固定
+        toggleSkyCoverage: (data) => {
+          if (!data || typeof data !== 'object') {
+            this.showSkyCoverage = false
+            this.skyCoveragePath = ''
+            this.skyCoverageLabelPos = null
+            return
+          }
+          const az = Number(data.az)
+          this.skyCoverage = {
+            azSpan: Number(data.azSpan),
+            altMin: Number(data.altMin),
+            altMax: Number(data.altMax),
+            az: data.az === undefined || data.az === null || !Number.isFinite(az) ? null : az,
+            label: data.label !== undefined ? String(data.label) : ''
+          }
+          this.showSkyCoverage = true
+          this.updateSkyCoverage()
         },
         scaleFov2Target: () => {
           if (!this.lastRectParams) {
@@ -557,6 +618,43 @@ export default {
       this.wheelGuard = null
     },
     // Update off-center rectangle position and size using DOM (like updateFovBox)
+    // 视口真实竖向视场（弧度）：竖屏时引擎 fov 是短边（横向），按立体投影换成竖向
+    currentFovYRad () {
+      const canvas = this.$stel.canvas
+      const fovYRad = this.$store.state.stel.fov
+      const aspect = canvas.width / canvas.height
+      return aspect < 1 ? 4 * Math.atan(Math.tan(fovYRad / 4) / aspect) : fovYRad
+    },
+    // VIEW 系方向 → CSS 像素 [x, y]（立体投影 r = 2f·tan(θ/2)，屏幕半高处 θ = fovY/2）。
+    // 接近视线正后方（z > 0.95）投影发散，回 null 让调用方断开
+    viewToScreen (vView) {
+      const vNorm = Math.hypot(vView[0], vView[1], vView[2])
+      if (vView[2] / vNorm > 0.95) return null
+      const { clientWidth, clientHeight } = this.$stel.canvas
+      const focalLength = clientHeight / (4 * Math.tan(this.currentFovYRad() / 4))
+      const factor = 2 * focalLength / (1 - vView[2] / vNorm)
+      return [clientWidth / 2 + factor * vView[0], clientHeight / 2 - factor * vView[1]]
+    },
+    viewCenterAzDeg () {
+      const vObs = this.$stel.convertFrame(this.$stel.core.observer, 'VIEW', 'OBSERVED', [0, 0, -1])
+      return this.$stel.anp(this.$stel.c2s(vObs)[0]) * 180 / Math.PI
+    },
+    coverageCenterAzDeg () {
+      return this.skyCoverage.az ?? this.viewCenterAzDeg()
+    },
+    updateSkyCoverage () {
+      if (!this.showSkyCoverage || !this.skyCoverage || !this.$stel || !this.$stel.canvas) return
+      const { azSpan, altMin, altMax } = this.skyCoverage
+      const az0 = this.coverageCenterAzDeg()
+      const toRad = Math.PI / 180
+      const obs = this.$stel.core.observer
+      const project = ([az, alt]) => this.viewToScreen(
+        this.$stel.convertFrame(obs, 'OBSERVED', 'VIEW', this.$stel.s2c(az * toRad, alt * toRad)))
+      const rings = coverageOutlineAltAz({ az0, azSpan, altMin, altMax })
+      this.skyCoveragePath = screenRingsToPath(rings.map((ring) => ring.map(project)))
+      const anchor = project([az0, altMin])
+      this.skyCoverageLabelPos = anchor ? { x: anchor[0], y: anchor[1] - 8 } : null
+    },
     updateOffCenterRect () {
       if (!this.showOffCenterRect || !this.offCenterRectParams || !this.$stel || !this.$stel.canvas) {
         return
@@ -584,46 +682,10 @@ export default {
         return
       }
 
-      // 4. Project to screen coordinates using Stellarium's projection
-      // The simplest approach: use the canvas project function if available
-      // Alternative: manual projection using stereographic formula
-
-      // Get canvas dimensions
-      const canvas = this.$stel.canvas
-      const clientWidth = canvas.clientWidth
-      const clientHeight = canvas.clientHeight
-
-      // Simple perspective projection from VIEW frame to screen
-      // VIEW frame: z points towards viewer, x points right, y points up
-      // Screen: origin at top-left, x points right, y points down
-      // For stereographic projection: r = 2 * f * tan(theta/2) where theta is angle from center
-
-      // Using the stereographic projection formula
-      const fovYRad = this.$store.state.stel.fov
-
-      // Account for aspect ratio in FOV calculation
-      // When aspect < 1 (portrait), core->fov is actually fovX (shorter edge),
-      // so we need to compute the real vertical FOV first
-      const aspect = canvas.width / canvas.height
-      let currentFovYRad = fovYRad
-      if (aspect < 1) {
-        currentFovYRad = 4 * Math.atan(Math.tan(fovYRad / 4) / aspect)
-      }
-
-      // Calculate the focal length in pixels using the real vertical FOV
-      // In stereographic projection: r_screen = 2 * f * tan(theta/2)
-      // At the edge, theta = fov/2, r_screen = height/2
-      // So: height/2 = 2 * f * tan(fov/4)
-      // f = height / (4 * tan(fov/4))
-      const focalLength = clientHeight / (4 * Math.tan(currentFovYRad / 4))
-
-      // Project the center point
-      // vView is [x, y, z] where z is negative for visible points
-      // Stereographic projection: screen_x = 2 * f * (vView.x / (1 - vView.z/|v|))
-      const vNorm = Math.sqrt(vView[0] * vView[0] + vView[1] * vView[1] + vView[2] * vView[2])
-      const factor = 2 * focalLength / (1 - vView[2] / vNorm)
-      const screenX = clientWidth / 2 + factor * vView[0]
-      const screenY = clientHeight / 2 - factor * vView[1] // Y is flipped
+      // 4. 立体投影到屏幕（viewToScreen；上面已排除视线背面）
+      const clientHeight = this.$stel.canvas.clientHeight
+      const currentFovYRad = this.currentFovYRad()
+      const [screenX, screenY] = this.viewToScreen(vView)
 
       // 5. Calculate rectangle size in screen pixels
       // Use the same formula as updateFovBox
@@ -713,6 +775,9 @@ export default {
         }
         if (this.showMosaic) {
           this.updateMosaic(false)
+        }
+        if (this.showSkyCoverage) {
+          this.updateSkyCoverage()
         }
         this.fovAnimationId = requestAnimationFrame(animate)
       }

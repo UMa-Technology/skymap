@@ -62,7 +62,9 @@ const GOLDEN_ACTIONS = [
   'setDateTime', 'speedTime', 'zoomIn', 'zoomOut', 'stopZoom', 'lockView', 'getState',
   'enableTouch', 'drawLines', 'clearLines',
   // 构图（2026-10-12）：视角锁在框中心的天球坐标上随天空走，退出解锁
-  'lockFramingCenter', 'unlockFramingCenter'
+  'lockFramingCenter', 'unlockFramingCenter',
+  // 大视场拍摄覆盖轮廓（2026-11-16）
+  'toggleSkyCoverage'
 ]
 
 const GOLDEN_STATE = [
@@ -80,9 +82,9 @@ const GOLDEN_STATE = [
 const sorted = (xs) => [...xs].sort()
 
 describe('window.StellariumActions 的键集合', () => {
-  it('黄金清单恰好 52 个', () => {
-    expect(GOLDEN_ACTIONS).toHaveLength(52)
-    expect(new Set(GOLDEN_ACTIONS).size).toBe(52)
+  it('黄金清单恰好 53 个', () => {
+    expect(GOLDEN_ACTIONS).toHaveLength(53)
+    expect(new Set(GOLDEN_ACTIONS).size).toBe(53)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeActions.filter((k) => framingActions.includes(k))

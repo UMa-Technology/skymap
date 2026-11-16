@@ -54,11 +54,11 @@ afterEach(() => {
 })
 
 describe('对 jsbridge.vue 的四个接口', () => {
-  it('actions() 恰好是 8 个取景 action', () => {
+  it('actions() 恰好是 9 个取景 action', () => {
     const w = mountIt()
     expect(Object.keys(w.vm.actions()).sort()).toEqual([
       'clearOffCenterRect', 'drawRectWithAltAndAz', 'getMosaicCenters', 'hideMosaic',
-      'restoreScaledFov', 'scaleFov2Target', 'showMosaic', 'toggleCenterFov'
+      'restoreScaledFov', 'scaleFov2Target', 'showMosaic', 'toggleCenterFov', 'toggleSkyCoverage'
     ])
     w.unmount()
   })
@@ -286,5 +286,52 @@ describe('构图态拦单击与滚轮', () => {
     expect(stel._core_on_zoom).toHaveBeenCalledWith(Math.pow(1.05, 2), 200, 400)
     expect(onCanvas).not.toHaveBeenCalled()
     canvas.remove()
+  })
+})
+
+describe('拍摄覆盖轮廓 toggleSkyCoverage', () => {
+  const ARCH = { azSpan: 240, altMin: -16, altMax: 90 }
+  // 视轴朝屏幕里（z = −1）：所有取样点都被投到屏幕中心，不会被判成视线反方向
+  function mountFacing (c2s = () => [0, 0]) {
+    const stel = { ...makeStel(), convertFrame: vi.fn(() => [0, 0, -1]), c2s }
+    return mount(FramingOverlay, { global: { mocks: { $stel: stel, $store: makeStore() } } })
+  }
+
+  it('传对象即显示并算出路径', async () => {
+    const w = mountFacing()
+    w.vm.actions().toggleSkyCoverage(ARCH)
+    expect(w.vm.showSkyCoverage).toBe(true)
+    expect(w.vm.skyCoveragePath.startsWith('M')).toBe(true)
+    await nextTick() // rAF 由 anyVisible 的 watcher 启动
+    expect(raf).toHaveBeenCalled()
+    w.unmount()
+  })
+
+  it('传 false 收起并停掉 rAF', async () => {
+    const w = mountFacing()
+    w.vm.actions().toggleSkyCoverage(ARCH)
+    await nextTick()
+    w.vm.actions().toggleSkyCoverage(false)
+    await nextTick()
+    expect(w.vm.showSkyCoverage).toBe(false)
+    expect(w.vm.skyCoveragePath).toBe('')
+    expect(caf).toHaveBeenCalled()
+    w.unmount()
+  })
+
+  it('不传 az 跟随视口中心方位，传 az 则固定', () => {
+    const w = mountFacing(() => [Math.PI / 2, 0])
+    w.vm.actions().toggleSkyCoverage(ARCH)
+    expect(w.vm.coverageCenterAzDeg()).toBeCloseTo(90, 9)
+    w.vm.actions().toggleSkyCoverage({ ...ARCH, az: 200 })
+    expect(w.vm.coverageCenterAzDeg()).toBe(200)
+    w.unmount()
+  })
+
+  it('视线反方向的点断开路径', () => {
+    const w = mountFacing()
+    expect(w.vm.viewToScreen([0, 0, 1])).toBeNull()
+    expect(w.vm.viewToScreen([0, 0, -1])).toEqual([200, 400])
+    w.unmount()
   })
 })
