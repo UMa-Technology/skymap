@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+1. **Sky coverage outline.** New action `toggleSkyCoverage` draws the outer outline of an alt-az region on the sky map, projected with the current stereographic view and redrawn every frame, so hosts can show the coverage of a wide multi-station shoot (Milky Way arch, fisheye) instead of a screen rectangle. Pass `{ azSpan, altMin, altMax, az?, label? }` in degrees (azimuth from north through east), or `false` to hide it. Without `az` the outline follows the azimuth of the view centre while its altitude range stays fixed; with `az` it stays at that azimuth. `azSpan ≥ 360` draws a band between the two altitudes and `altMax ≥ 90` closes the top at the zenith. It is independent of `toggleCenterFov`. `PROTOCOL` is unchanged; hosts that call it need a base version that has it.
+
 ## 2026-10-15 — v1.3.0
 
 1. **Framing ring can label the angle itself.** `toggleCenterFov` takes a new boolean `absoluteLabel`. When it is true the ring tag shows the target position angle (0°–359°, rounded, then wrapped) instead of the signed difference from the current angle, no difference arc is drawn and the tag never turns green. The hint arrows follow the label: dragging clockwise lowers the position angle, so the clockwise side reads `−` and the counter-clockwise side `+` (the difference label keeps `+` clockwise). Hosts that leave the field out get the previous behaviour. The App uses it to frame a sequence target at an absolute angle without a rotator.

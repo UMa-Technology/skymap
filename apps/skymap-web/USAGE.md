@@ -30,6 +30,12 @@ getState.locked - 视角是否正锁在选中目标上；手动拖动、unselect
 getState.frameCenter - 取景框中心（结构同 currentLocation）；锁在选中天体上时等于天体坐标，拖开后是屏幕中心。currentLocation 有选中天体时永远报天体坐标
 panSettled（出站，data 为 null）- 单指拖动抬手后视角停稳（没起惯性，或惯性滑完 / 被锁定、动画打断）时发一次；紧接在它前面先推一次 getState，带的是停下那一刻的 frameCenter / locked。点按、双指缩放不发；新一轮拖动或缩放开始会作废上一轮。引擎计数在 movements.pan_settled
 gotoAndLock - 导航并锁定到指定的天体
+toggleSkyCoverage - 大视场多机位拍摄（银河拱桥、鱼眼等）的覆盖外轮廓，按当前立体投影画成曲线、每帧跟随；与 toggleCenterFov 互不影响。新增 action，宿主需确认基座版本含它
+  false 收起；对象 { azSpan, altMin, altMax, az?, label? }，单位度，方位自北向东
+  azSpan 方位总跨度（≥ 360 画成 altMin～altMax 的环带）；altMin / altMax 下缘 / 上缘高度（altMax ≥ 90 上缘收到天顶一点）
+  az 不传：中心方位每帧跟随视口中心，高度范围固定不随上下拖动变；传了就固定在该方位
+  label 可选，画在下缘中点上方
+  例（拱桥，广角约 60°×34°）：{ "azSpan": 240, "altMin": -16, "altMax": 90, "label": "拍摄范围" }
 ```
 
 gotoAndLock具体格式如下:
