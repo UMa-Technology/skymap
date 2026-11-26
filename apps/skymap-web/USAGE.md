@@ -36,6 +36,14 @@ toggleSkyCoverage - 大视场多机位拍摄（银河拱桥、鱼眼等）的覆
   az 不传：中心方位每帧跟随视口中心，高度范围固定不随上下拖动变；传了就固定在该方位
   label 可选，画在下缘中点上方
   例（拱桥，广角约 60°×34°）：{ "azSpan": 240, "altMin": -16, "altMax": 90, "label": "拍摄范围" }
+showMosaicLayout - 可编辑马赛克（v1.4.0）：网格钉在天上（锚点 = 网格中心的天球坐标），格子可点可拖。与 showMosaic 互斥；只画与报手势，版面真源在宿主
+  { center?: {ra 小时, dec 度}, gridPa, fovX, fovY, overlap, cols, rows, tiles: [{ key, col, row, dx?, dy?, enabled?, label?, state? }], editing?, tileEdit?, ring?, ringRadius?, fit?, colors?: { normal, disabled, warn } }
+  不给 center 取屏幕中心并回 mosaicMove(end)；state 为 normal / selected / warn / slot（slot = 补格虚位，只能点）；格子短边 < 44 px 不接手势
+  出站：mosaicTileTap {key}、mosaicMove {center, phase: move|end}、mosaicTileLongPress {key}（tileEdit 才有）、mosaicTileMove {key, dx, dy, phase}、
+        mosaicBackgroundTap {}（有 selected 格时点空白）、mosaicRotate {gridPa}（ring 圆环）、mosaicHittable {hittable}
+  拖动中网页先跟手，按着期间宿主的回写暂存、松手再套；getMosaicCenters 在可编辑马赛克下只回启用格（含 key），按 label 排序
+hideMosaicLayout - 收起可编辑马赛克
+centerMosaicLayout - 视图转到网格锚点；{ lock: true } 跟踪锁住（圆环用），退出走 unlockFramingCenter
 ```
 
 gotoAndLock具体格式如下:
