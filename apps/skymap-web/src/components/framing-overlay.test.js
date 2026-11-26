@@ -54,11 +54,12 @@ afterEach(() => {
 })
 
 describe('对 jsbridge.vue 的四个接口', () => {
-  it('actions() 恰好是 9 个取景 action', () => {
+  it('actions() 恰好是 12 个取景 action', () => {
     const w = mountIt()
     expect(Object.keys(w.vm.actions()).sort()).toEqual([
-      'clearOffCenterRect', 'drawRectWithAltAndAz', 'getMosaicCenters', 'hideMosaic',
-      'restoreScaledFov', 'scaleFov2Target', 'showMosaic', 'toggleCenterFov', 'toggleSkyCoverage'
+      'centerMosaicLayout', 'clearOffCenterRect', 'drawRectWithAltAndAz', 'getMosaicCenters', 'hideMosaic',
+      'hideMosaicLayout', 'restoreScaledFov', 'scaleFov2Target', 'showMosaic', 'showMosaicLayout',
+      'toggleCenterFov', 'toggleSkyCoverage'
     ])
     w.unmount()
   })
@@ -67,7 +68,8 @@ describe('对 jsbridge.vue 的四个接口', () => {
     const w = mountIt()
     expect(w.vm.stateFields()).toEqual({
       showMosaic: false,
-      mosaicConfig: { x: 2, y: 2, overlap: 10 }
+      mosaicConfig: { x: 2, y: 2, overlap: 10 },
+      showMosaicLayout: false
     })
     w.unmount()
   })

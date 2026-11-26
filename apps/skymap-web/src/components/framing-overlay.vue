@@ -11,7 +11,7 @@
     style="overflow: hidden; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 1001;"
   >
     <div
-      v-if="showCenterFov && !showMosaic"
+      v-if="showCenterFov && !showMosaic && !layoutOn"
       :style="fovBoxStyle"
     >
       <div
@@ -22,7 +22,7 @@
       </div>
     </div>
     <framing-ring
-      v-if="rotatable && showCenterFov && !showMosaic"
+      v-if="rotatable && showCenterFov && !showMosaic && !layoutOn"
       :angle-to-north="angleToNorth"
       :target-pa="ringTargetPa"
       :zero-pa="ringZeroPa"
@@ -72,6 +72,8 @@
     >
       <span class="mosaic-label">{{ tile.index }}</span>
     </div>
+    <!-- 可编辑马赛克（showMosaicLayout）：钉在天上、可点可拖，见 mosaic-layout.vue -->
+    <mosaic-layout ref="mosaicLayout" />
   </div>
 </template>
 <script>
@@ -86,11 +88,12 @@
 // 什么都不显示时也每帧回调；引擎侧静态天空已压到 3 秒 1 帧，这里不该拖后腿。
 import jsbridge from '@/utils/jsbridge'
 import FramingRing from './framing-ring.vue'
+import MosaicLayout from './mosaic-layout.vue'
 import { mosaicSkyOffset, mosaicScreenLayout, tangentPlaneToRaDec } from './mosaic-math'
 import { coverageOutlineAltAz, screenRingsToPath, regionContainsAltAz } from './coverage-math'
 
 export default {
-  components: { FramingRing },
+  components: { FramingRing, MosaicLayout },
   data: function () {
     return {
       showCenterFov: false,
@@ -189,7 +192,9 @@ export default {
       skyCoveragePath: '',
       skyCoverageFill: 'none',
       skyCoverageLabelPos: null,
-      lastMosaicUpdate: 0
+      lastMosaicUpdate: 0,
+      // 可编辑马赛克在显示：中心框、旧马赛克都让位
+      layoutOn: false
     }
   },
   computed: {
@@ -241,7 +246,7 @@ export default {
     if (this.anyVisible) this.startFovAnimation()
     // 构图态单击不选中：引擎 on_click 钩子返回 true 即吃掉默认选中（src/js/pre.js Module.on）
     if (this.$stel && typeof this.$stel.on === 'function') {
-      this.$stel.on('click', () => this.rotatable)
+      this.$stel.on('click', () => this.rotatable || (this.$refs.mosaicLayout ? this.$refs.mosaicLayout.onBackgroundClick() : false))
     }
   },
   beforeUnmount () {
@@ -460,6 +465,10 @@ export default {
             return
           }
 
+          if (this.layoutOn && this.$refs.mosaicLayout) {
+            this.$refs.mosaicLayout.hide()
+            this.layoutOn = false
+          }
           const x = Number(config.x) || 1
           const y = Number(config.y) || 1
           const overlap = Number(config.overlap) || 0
@@ -491,15 +500,31 @@ export default {
         },
         // 获取马赛克 tile 中心坐标
         getMosaicCenters: () => {
-          const centers = this.getMosaicTileCenters()
+          const centers = this.layoutOn ? this.$refs.mosaicLayout.centers() : this.getMosaicTileCenters()
           jsbridge.postMessage('mosaicCenters', centers)
+        },
+        // 可编辑马赛克：参数见 mosaic-layout.vue show()。与旧 showMosaic 互斥
+        showMosaicLayout: (cfg) => {
+          if (!this.$refs.mosaicLayout) return
+          this.showMosaic = false
+          this.mosaicTiles = []
+          this.layoutOn = this.$refs.mosaicLayout.show(cfg) || this.layoutOn
+        },
+        hideMosaicLayout: () => {
+          if (this.$refs.mosaicLayout) this.$refs.mosaicLayout.hide()
+          this.layoutOn = false
+        },
+        // 视图转到网格锚点；{ lock: true } 跟踪锁住（马赛克圆环用），退出走 unlockFramingCenter
+        centerMosaicLayout: (opts) => {
+          if (this.layoutOn && this.$refs.mosaicLayout) this.$refs.mosaicLayout.focus(opts)
         }
       }
     },
     stateFields () {
       return {
         showMosaic: this.showMosaic,
-        mosaicConfig: this.mosaicConfig
+        mosaicConfig: this.mosaicConfig,
+        showMosaicLayout: this.layoutOn
       }
     },
     tick () {

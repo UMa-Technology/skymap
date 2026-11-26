@@ -4,7 +4,7 @@
 // The terms of the AGPL v3 license can be found in the main directory of this
 // repository.
 
-// 钉死对外协议：window.StellariumActions 的 52 个键与 getState 回包的 36 个键。
+// 钉死对外协议：window.StellariumActions 的 56 个键与 getState 回包的 37 个键。
 // 取景功能拆出去之后，两份清单由 jsbridge.vue 与 framing-overlay.vue 共同凑齐，
 // 且两边不许重名。纯静态：读源码、正则提取，不起 Vue、不碰 DOM。
 import { describe, it, expect } from 'vitest'
@@ -64,7 +64,9 @@ const GOLDEN_ACTIONS = [
   // 构图（2026-10-12）：视角锁在框中心的天球坐标上随天空走，退出解锁
   'lockFramingCenter', 'unlockFramingCenter',
   // 大视场拍摄覆盖轮廓（2026-11-16）
-  'toggleSkyCoverage'
+  'toggleSkyCoverage',
+  // 可编辑马赛克（2026-11-26）：钉在天上、点格停用、拖网格、圆环
+  'showMosaicLayout', 'hideMosaicLayout', 'centerMosaicLayout'
 ]
 
 const GOLDEN_STATE = [
@@ -76,15 +78,15 @@ const GOLDEN_STATE = [
   'hasCustomHorizon', 'showCustomHorizon', 'toggleNightMode', 'currentTime', 'location',
   'speedTime', 'fov', 'fovX', 'fovY', 'arMode', 'enableArMode', 'currentLocation',
   'direction', 'drawSelectedTargetLine', 'showMosaic', 'mosaicConfig', 'skyCulture',
-  'toggleDsos', 'locked', 'frameCenter'
+  'toggleDsos', 'locked', 'frameCenter', 'showMosaicLayout'
 ]
 
 const sorted = (xs) => [...xs].sort()
 
 describe('window.StellariumActions 的键集合', () => {
-  it('黄金清单恰好 53 个', () => {
-    expect(GOLDEN_ACTIONS).toHaveLength(53)
-    expect(new Set(GOLDEN_ACTIONS).size).toBe(53)
+  it('黄金清单恰好 56 个', () => {
+    expect(GOLDEN_ACTIONS).toHaveLength(56)
+    expect(new Set(GOLDEN_ACTIONS).size).toBe(56)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeActions.filter((k) => framingActions.includes(k))
@@ -96,9 +98,9 @@ describe('window.StellariumActions 的键集合', () => {
 })
 
 describe('getState 回包的键集合', () => {
-  it('黄金清单恰好 36 个', () => {
-    expect(GOLDEN_STATE).toHaveLength(36)
-    expect(new Set(GOLDEN_STATE).size).toBe(36)
+  it('黄金清单恰好 37 个', () => {
+    expect(GOLDEN_STATE).toHaveLength(37)
+    expect(new Set(GOLDEN_STATE).size).toBe(37)
   })
   it('基座与取景模块不重名', () => {
     const dup = bridgeState.filter((k) => framingState.includes(k))
