@@ -125,6 +125,7 @@ export default {
       lastReport: 0,
       fitPending: false,
       tooSmall: false,
+      pendingTiles: null,
       animId: null,
       corners: ['tl', 'tr', 'br', 'bl']
     }
@@ -159,6 +160,9 @@ export default {
           if (this.center) jsbridge.postMessage('mosaicMove', { center: this.center, phase: 'end' })
         }
         this.tiles = tiles
+      } else {
+        // 按着的时候宿主回写（长按选中、点格）先存着，松手再套，免得把手指下正在跟手的位置冲掉
+        this.pendingTiles = tiles
       }
       this.cols = cols
       this.rows = rows
@@ -460,7 +464,11 @@ export default {
     },
     clearPress () {
       if (this.press && this.press.timer) clearTimeout(this.press.timer)
+      const moved = this.press && (this.press.mode === 'tile' || this.press.mode === 'grid')
       this.press = null
+      // 拖动结束宿主会再下发一次；只是长按 / 点按时，套用按着期间暂存的那次回写
+      if (this.pendingTiles && !moved) this.tiles = this.pendingTiles
+      this.pendingTiles = null
       this.dragGrid = false
       this.outline = null
     },

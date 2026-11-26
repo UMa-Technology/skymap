@@ -158,3 +158,19 @@ describe('入库与背景点击', () => {
     expect(w.vm.onBackgroundClick()).toBe(false)
   })
 })
+
+describe('按压中的宿主回写', () => {
+  it('长按期间宿主下发的选中态，松手后套用', async () => {
+    vi.useFakeTimers()
+    w.vm.show(cfg({ tileEdit: true }))
+    await nextTick()
+    const t = w.find('[data-key="1,0"]')
+    await down(t, 100, 100)
+    vi.advanceTimersByTime(450)
+    // 宿主收到长按后回写：这一格 selected
+    w.vm.show(cfg({ tileEdit: true, tiles: [cfg().tiles[0], { ...cfg().tiles[1], state: 'selected' }] }))
+    expect(w.vm.tiles.find(x => x.key === '1,0').state).toBe('normal')
+    await up(t, 100, 100)
+    expect(w.vm.tiles.find(x => x.key === '1,0').state).toBe('selected')
+  })
+})
